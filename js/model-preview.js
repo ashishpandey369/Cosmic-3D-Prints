@@ -150,22 +150,23 @@ function makeMaterial(THREE) {
 
 function parseSTL(THREE, input) {
   const bytes=input instanceof Uint8Array?input:new Uint8Array(input);
-  if(bytes.length<84) throw new Error("The STL file is too small or invalid.");
-  const u32=i=>(bytes[i]|(bytes[i+1]<<8)|(bytes[i+2]<<16)|(bytes[i+3]<<24))>>>0;
-  const f32=i=>{const ab=new ArrayBuffer(4),b=new Uint8Array(ab);b[0]=bytes[i];b[1]=bytes[i+1];b[2]=bytes[i+2];b[3]=bytes[i+3];return new Float32Array(ab)[0];};
   const geometry=new THREE.BufferGeometry(),positions=[];
-  const count=u32(80),binarySize=84+count*50;
-  if(count>0&&binarySize<=bytes.length){
+  const text=new TextDecoder().decode(bytes);
+  const matches=[...text.matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/gi)];
+  if(matches.length>=3){
+    for(const m of matches)positions.push(+m[1],+m[2],+m[3]);
+  }else{
+    if(bytes.length<84)throw new Error("The STL file is incomplete or is not a valid ASCII/binary STL.");
+    const u32=i=>(bytes[i]|(bytes[i+1]<<8)|(bytes[i+2]<<16)|(bytes[i+3]<<24))>>>0;
+    const f32=i=>{const ab=new ArrayBuffer(4),b=new Uint8Array(ab);b[0]=bytes[i];b[1]=bytes[i+1];b[2]=bytes[i+2];b[3]=bytes[i+3];return new Float32Array(ab)[0];};
+    const count=u32(80),binarySize=84+count*50;
+    if(!(count>0&&binarySize<=bytes.length))throw new Error("No STL triangles found.");
     let offset=84;
     for(let i=0;i<count;i++){
       offset+=12;
-      for(let j=0;j<3;j++){positions.push(f32(offset),f32(offset+4),f32(offset+8));offset+=12;}
+      for(let j=0;j<3;j++){const x=f32(offset),y=f32(offset+4),z=f32(offset+8);if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z))throw new Error("The STL contains invalid coordinate data.");positions.push(x,y,z);offset+=12;}
       offset+=2;
     }
-  }else{
-    const matches=[...new TextDecoder().decode(bytes).matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/gi)];
-    if(!matches.length)throw new Error("No STL triangles found.");
-    for(const m of matches)positions.push(+m[1],+m[2],+m[3]);
   }
   if(positions.length<9)throw new Error("The STL file contains no usable geometry.");
   geometry.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));
@@ -213,7 +214,7 @@ async function loadModel(file) {
     let geometry;
 
     if (ext === "stl") {
-      geometry = parseSTL(THREE, await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(new Uint8Array(r.result)); r.onerror = () => reject(new Error("Could not read the selected model file.")); r.readAsArrayBuffer(file); }));
+      geometry = parseSTL(THREE, new Uint8Array(await file.arrayBuffer()));
     } else if (ext === "obj") {
       geometry = parseOBJ(THREE, await file.text());
     } else {
