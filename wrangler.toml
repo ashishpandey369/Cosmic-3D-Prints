@@ -1,5 +1,4 @@
 name = "cosmic-3d-prints"
-account_id = "ad41fa20d2c4e8e8efbb86e2622b841"
 main = "cloudflare-worker/src/index.js"
 compatibility_date = "2026-09-20"
 
