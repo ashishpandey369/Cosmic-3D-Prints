@@ -21,3 +21,10 @@
 .cc-file-status{min-height:18px;font-size:.8rem;color:#666;line-height:1.4}
 .cc-file-status.success{color:#24724b}.cc-file-status.error{color:#b33b3b}
 .cc-calculator-form input[readonly]{background:#f8f7f9}
+
+.cc-support-estimate{margin-top:12px;padding:15px 16px;border:1px solid #e1dceb;border-radius:14px;background:linear-gradient(135deg,#fbf9ff,#f5f8ff);display:grid;gap:6px;color:#4f4a58;font-size:.86rem;line-height:1.45}
+.cc-support-estimate strong{font-size:.92rem;color:#292431;margin-bottom:2px}
+.cc-support-estimate span{display:block}
+.cc-support-estimate small{color:#777;font-size:.76rem}
+.cc-support-estimate .cc-support-price{margin-top:5px;padding-top:9px;border-top:1px solid #e5dfec;font-size:.95rem;color:#292431}
+.cc-support-estimate .cc-support-price b{font-size:1.05rem}
