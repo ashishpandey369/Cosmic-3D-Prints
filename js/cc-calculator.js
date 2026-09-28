@@ -4,6 +4,80 @@
 const SUPPORT_MIN_RATE=0.15;
 const SUPPORT_MAX_RATE=0.30;
 
+let occtPromise=null;
+const OCCT_VERSION="0.0.23";
+const OCCT_BASE="https://cdn.jsdelivr.net/npm/occt-import-js@"+OCCT_VERSION+"/dist/";
+
+function loadOCCT(){
+  if(occtPromise)return occtPromise;
+  occtPromise=new Promise((resolve,reject)=>{
+    if(window.occtimportjs){
+      window.occtimportjs({
+        locateFile:file=>OCCT_BASE+file
+      }).then(resolve).catch(reject);
+      return;
+    }
+    const script=document.createElement("script");
+    script.src=OCCT_BASE+"occt-import-js.js";
+    script.async=true;
+    script.onload=()=>{
+      if(typeof window.occtimportjs!=="function"){
+        reject(new Error("CAD engine loaded, but its browser module was not found."));
+        return;
+      }
+      window.occtimportjs({
+        locateFile:file=>OCCT_BASE+file
+      }).then(resolve).catch(reject);
+    };
+    script.onerror=()=>reject(new Error("Could not load the CAD conversion engine. Check your internet connection and try again."));
+    document.head.appendChild(script);
+  });
+  return occtPromise;
+}
+
+function occtMeshVolumeCC(mesh){
+  const positions=mesh?.attributes?.position?.array;
+  const indices=mesh?.index?.array;
+  if(!positions||!positions.length)return 0;
+  let v=0;
+  const add=(ia,ib,ic)=>{
+    const a=ia*3,b=ib*3,c=ic*3;
+    if(c+2>=positions.length)return;
+    const ax=positions[a],ay=positions[a+1],az=positions[a+2];
+    const bx=positions[b],by=positions[b+1],bz=positions[b+2];
+    const cx=positions[c],cy=positions[c+1],cz=positions[c+2];
+    v+=(ax*(by*cz-bz*cy)-ay*(bx*cz-bz*cx)+az*(bx*cy-by*cx))/6;
+  };
+  if(indices&&indices.length){
+    for(let i=0;i+2<indices.length;i+=3)add(indices[i],indices[i+1],indices[i+2]);
+  }else{
+    for(let i=0;i+2<positions.length/3;i+=3)add(i,i+1,i+2);
+  }
+  // OCCT is asked for millimetre output, so mm³ / 1000 = cm³ (CC).
+  return Math.abs(v)/1000;
+}
+
+function occtResultVolumeCC(result){
+  if(!result?.success||!Array.isArray(result.meshes))throw Error("The CAD file could not be converted into a measurable solid.");
+  const total=result.meshes.reduce((sum,mesh)=>sum+occtMeshVolumeCC(mesh),0);
+  if(!Number.isFinite(total)||total<=0)throw Error("The CAD file was opened, but no positive enclosed volume could be measured.");
+  return total;
+}
+
+async function parseSTEPOrIGES(bytes,ext){
+  const occt=await loadOCCT();
+  const params={
+    linearUnit:"millimeter",
+    linearDeflectionType:"bounding_box_ratio",
+    linearDeflection:0.001,
+    angularDeflection:0.5
+  };
+  const result=ext==="step"||ext==="stp"
+    ? occt.ReadStepFile(bytes,params)
+    : occt.ReadIgesFile(bytes,params);
+  return occtResultVolumeCC(result);
+}
+
 const ccRates={
   "sla-white":{minimum:1000,lowRate:35,highRate:32,threshold:100},
   "sla-clear":{minimum:1500,lowRate:60,highRate:55,threshold:100},
@@ -129,6 +203,7 @@ async function calculateModelVolume(file){
   if(ext==="ply")return parsePLY(text());
   if(ext==="3mf")return parse3MF(bytes.buffer);
   if(ext==="glb")return parseGLB(bytes.buffer);
+  if(ext==="step"||ext==="stp"||ext==="iges"||ext==="igs")return parseSTEPOrIGES(bytes,ext);
   if(ext==="gltf"){const g=JSON.parse(text());g.__buffers=[];for(const b of g.buffers||[]){if(!b.uri?.startsWith("data:"))throw Error("Use GLB for GLTF files with external .bin files");g.__buffers.push(await(await fetch(b.uri)).arrayBuffer())}return parseGLTF(g)}
   throw Error("This file is accepted, but automatic CC calculation needs mesh conversion. Use STL, OBJ, 3MF, GLB, GLTF, PLY or OFF for instant calculation.");
 }
@@ -194,7 +269,8 @@ document.addEventListener("DOMContentLoaded",()=>{
     preview?.classList.remove("visible");
     name.textContent=file.name;
     status.className="cc-file-status";
-    status.textContent="Calculating model volume…";
+    const cadExt=/\.(step|stp|iges|igs)$/i.test(file.name);
+    status.textContent=cadExt?"Loading CAD engine and calculating solid volume…":"Calculating model volume…";
     volume.readOnly=false;
     volume.value="";
     updateCCPrice();
