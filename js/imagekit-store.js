@@ -95,7 +95,7 @@ export async function uploadImageUrl(sourceUrl, { folder, fileName } = {}) {
     method: "POST",
     body: {
       sourceUrl,
-      folder: folder || "/gifty-hamper/other",
+      folder: folder || "/cosmic/other",
       fileName: safeFileName(fileName || "image.webp")
     }
   });
