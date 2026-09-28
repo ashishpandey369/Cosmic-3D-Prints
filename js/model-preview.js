@@ -1,8 +1,8 @@
 (function(){
 let threePromise=null;
 let viewer=null;
-const THREE_URL="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-const ADDON="https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/";
+const THREE_URL="three";
+const ADDON="three/addons/loaders/";
 const OCCT_VERSION="0.0.23";
 const OCCT_BASE="https://cdn.jsdelivr.net/npm/occt-import-js@"+OCCT_VERSION+"/dist/";
 
