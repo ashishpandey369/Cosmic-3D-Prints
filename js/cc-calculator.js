@@ -106,8 +106,9 @@ async function calculateModelVolume(file){
 function updateCCPrice(){
   const material=document.querySelector("#cc-material")?.value,volume=Number(document.querySelector("#cc-volume")?.value||0),price=document.querySelector("#cc-price"),breakdown=document.querySelector("#cc-breakdown"),rate=ccRates[material];
   if(!rate||!price||!breakdown)return;if(volume<=0){price.textContent="₹0";breakdown.textContent="Upload a model or enter CC manually.";return}
-  const per=volume<rate.threshold?rate.lowRate:rate.highRate,raw=volume*per,total=Math.max(rate.minimum,raw);price.textContent="₹"+Math.round(total).toLocaleString("en-IN");
-  breakdown.textContent=raw<rate.minimum?volume.toFixed(2)+" CC × ₹"+per+"/CC = ₹"+Math.round(raw).toLocaleString("en-IN")+" • Minimum ₹"+rate.minimum.toLocaleString("en-IN"):volume.toFixed(2)+" CC × ₹"+per+"/CC";
+  const per=volume<rate.threshold?rate.lowRate:rate.highRate,raw=volume*per,base=Math.max(rate.minimum,raw),quantity=Math.max(1,Number(document.querySelector("#quote-quantity")?.value||1)),total=base*quantity;price.textContent="₹"+Math.round(total).toLocaleString("en-IN");
+  const one=raw<rate.minimum?volume.toFixed(2)+" CC × ₹"+per+"/CC = ₹"+Math.round(raw).toLocaleString("en-IN")+" • Minimum ₹"+rate.minimum.toLocaleString("en-IN"):volume.toFixed(2)+" CC × ₹"+per+"/CC";
+  breakdown.textContent=quantity>1?one+" • "+quantity+" copies = ₹"+Math.round(total).toLocaleString("en-IN"):one;
 }
 document.addEventListener("DOMContentLoaded",()=>{
   const input=document.querySelector("#cc-file"),volume=document.querySelector("#cc-volume"),status=document.querySelector("#cc-file-status"),name=document.querySelector("#cc-file-name");
@@ -116,5 +117,5 @@ document.addEventListener("DOMContentLoaded",()=>{
     try{const cc=await calculateModelVolume(file);if(!Number.isFinite(cc)||cc<=0)throw Error("The model has no positive enclosed volume.");volume.value=cc.toFixed(2);volume.readOnly=true;status.className="cc-file-status success";status.textContent="Calculated volume: "+cc.toFixed(2)+" CC";updateCCPrice()}
     catch(e){volume.readOnly=false;status.className="cc-file-status error";status.textContent=e.message||"Could not calculate this file. Enter CC manually."}
   });
-  document.querySelector("#cc-material")?.addEventListener("change",updateCCPrice);volume?.addEventListener("input",updateCCPrice);updateCCPrice();
+  document.querySelector("#cc-material")?.addEventListener("change",updateCCPrice);volume?.addEventListener("input",updateCCPrice);document.querySelector("#quote-quantity")?.addEventListener("input",updateCCPrice);updateCCPrice();
 });
