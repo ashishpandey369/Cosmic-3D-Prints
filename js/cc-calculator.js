@@ -46,6 +46,7 @@ function updateCCPrice(){
       <span>Estimated total print material: <b>${totalMinCC.toFixed(2)}–${totalMaxCC.toFixed(2)} CC</b></span>
       <div class="cc-support-price">Estimated printing price: <b>₹${Math.round(minTotal).toLocaleString("en-IN")}–₹${Math.round(maxTotal).toLocaleString("en-IN")}</b></div>
       <small>Support usage is only an estimate. Actual supports depend on model geometry, orientation, support settings and the slicer.</small>`;
+  }
 }
 
 function formatName(file){
