@@ -106,8 +106,8 @@ async function calculateModelVolume(file){
 function updateCCPrice(){
   const material=document.querySelector("#cc-material")?.value,volume=Number(document.querySelector("#cc-volume")?.value||0),price=document.querySelector("#cc-price"),breakdown=document.querySelector("#cc-breakdown"),rate=ccRates[material];
   if(!rate||!price||!breakdown)return;if(volume<=0){price.textContent="₹0";breakdown.textContent="Upload a model or enter CC manually.";return}
-  const per=volume<rate.threshold?rate.lowRate:rate.highRate,raw=volume*per,base=Math.max(rate.minimum,raw),quantity=Math.max(1,Number(document.querySelector("#quote-quantity")?.value||1)),total=base*quantity;price.textContent="₹"+Math.round(total).toLocaleString("en-IN");
-  const one=raw<rate.minimum?volume.toFixed(2)+" CC × ₹"+per+"/CC = ₹"+Math.round(raw).toLocaleString("en-IN")+" • Minimum ₹"+rate.minimum.toLocaleString("en-IN"):volume.toFixed(2)+" CC × ₹"+per+"/CC";
+  const per=volume<rate.threshold?rate.lowRate:rate.highRate,raw=volume*per,quantity=Math.max(1,Number(document.querySelector("#quote-quantity")?.value||1)),total=raw*quantity;price.textContent="₹"+Math.round(total).toLocaleString("en-IN");
+  const one=volume.toFixed(2)+" CC × ₹"+per+"/CC = ₹"+Math.round(raw).toLocaleString("en-IN");
   breakdown.textContent=quantity>1?one+" • "+quantity+" copies = ₹"+Math.round(total).toLocaleString("en-IN"):one;
 }
 document.addEventListener("DOMContentLoaded",()=>{
