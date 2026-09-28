@@ -1,4 +1,19 @@
 document.addEventListener("DOMContentLoaded",()=>{
+  const modelInput=document.querySelector("#cc-file");
+  const modelName=document.querySelector("#cc-file-name");
+  const modelStatus=document.querySelector("#cc-file-status");
+  if(modelInput){
+    modelInput.addEventListener("change",()=>{
+      const file=modelInput.files?.[0];
+      if(file){
+        if(modelName) modelName.textContent=file.name;
+        if(modelStatus && !window.CosmicModelIO) modelStatus.textContent="Model selected. Starting the 3D model engine…";
+      }
+    });
+  }
+});
+
+document.addEventListener("DOMContentLoaded",()=>{
   const submit=document.querySelector("#quote-submit"),note=document.querySelector("#quote-submit-note"),ref=document.querySelector("#quote-reference");
   ref?.addEventListener("change",()=>{
     const files=[...ref.files],label=document.querySelector(".quote-secondary-upload");
