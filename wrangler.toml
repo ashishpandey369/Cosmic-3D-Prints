@@ -1,8 +1,8 @@
-name = "gifty-hamper"
+name = "cosmic-3d-prints"
 main = "cloudflare-worker/src/index.js"
 compatibility_date = "2026-09-20"
 
 [vars]
-FIREBASE_PROJECT_ID = "gifty-hamper"
-IMAGEKIT_PUBLIC_KEY = "public_Rt1oqiUStVe495Q5BXhyFI19G+c="
+FIREBASE_PROJECT_ID = "cosmic-3d-bc4d3"
+IMAGEKIT_PUBLIC_KEY = "public_Fzs4VZA4lK9D9u5TOUW7p/889Ww="
 ALLOWED_ORIGIN = "https://ashishpandey369.github.io"
