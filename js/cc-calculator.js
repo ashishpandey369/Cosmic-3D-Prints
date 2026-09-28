@@ -1,3 +1,4 @@
+(function(){
 
 const ccRates={
   "sla-white":{minimum:1000,lowRate:35,highRate:32,threshold:100},
@@ -135,11 +136,50 @@ function updateCCPrice(){
   breakdown.textContent=quantity>1?one+" • "+quantity+" copies = ₹"+Math.round(total).toLocaleString("en-IN"):one;
 }
 document.addEventListener("DOMContentLoaded",()=>{
-  const input=document.querySelector("#cc-file"),volume=document.querySelector("#cc-volume"),status=document.querySelector("#cc-file-status"),name=document.querySelector("#cc-file-name");
+  const input=document.querySelector("#cc-file"),volume=document.querySelector("#cc-volume"),status=document.querySelector("#cc-file-status"),name=document.querySelector("#cc-file-name"),preview=document.querySelector("#model-preview");
+  let previewTimer=null;
+
   input?.addEventListener("change",async()=>{
-    const file=input.files?.[0];if(!file)return;name.textContent=file.name;status.className="cc-file-status";status.textContent="Reading 3D geometry…";
-    try{const cc=await calculateModelVolume(file);if(!Number.isFinite(cc)||cc<=0)throw Error("The model has no positive enclosed volume.");volume.value=cc.toFixed(2);volume.readOnly=true;status.className="cc-file-status success";status.textContent="Calculated volume: "+cc.toFixed(2)+" CC";updateCCPrice()}
-    catch(e){volume.readOnly=false;status.className="cc-file-status error";status.textContent=e.message||"Could not calculate this file. Enter CC manually."}
+    const file=input.files?.[0];
+    if(!file)return;
+
+    if(previewTimer)clearTimeout(previewTimer);
+    preview?.classList.remove("visible");
+    name.textContent=file.name;
+    status.className="cc-file-status";
+    status.textContent="Calculating model volume…";
+    volume.readOnly=false;
+    volume.value="";
+    updateCCPrice();
+
+    try{
+      const cc=await calculateModelVolume(file);
+      if(!Number.isFinite(cc)||cc<=0)throw Error("The model has no positive enclosed volume.");
+
+      volume.value=cc.toFixed(2);
+      volume.readOnly=true;
+      status.className="cc-file-status success";
+      status.textContent="Calculated volume: "+cc.toFixed(2)+" CC";
+      updateCCPrice();
+
+      status.textContent="Calculated volume: "+cc.toFixed(2)+" CC • Preparing 3D preview…";
+      previewTimer=setTimeout(()=>{
+        preview?.classList.add("visible");
+        if(window.CosmicPreview?.loadModel)window.CosmicPreview.loadModel(file);
+      },1500);
+    }catch(e){
+      volume.readOnly=false;
+      status.className="cc-file-status error";
+      status.textContent=e.message||"Could not calculate this file. Enter CC manually.";
+      preview?.classList.remove("visible");
+    }
   });
-  document.querySelector("#cc-material")?.addEventListener("change",updateCCPrice);volume?.addEventListener("input",updateCCPrice);document.querySelector("#quote-quantity")?.addEventListener("input",updateCCPrice);updateCCPrice();
+
+  document.querySelector("#cc-material")?.addEventListener("change",updateCCPrice);
+  volume?.addEventListener("input",updateCCPrice);
+  document.querySelector("#quote-quantity")?.addEventListener("input",updateCCPrice);
+  updateCCPrice();
 });
+
+window.CosmicCC={calculateModelVolume,updateCCPrice};
+})();
