@@ -39,13 +39,13 @@ function updateCCPrice(){
   const one=volume.toFixed(2)+" CC × ₹"+per+"/CC = ₹"+Math.round(raw).toLocaleString("en-IN");
   breakdown.textContent=quantity>1?one+" • "+quantity+" copies = ₹"+Math.round(baseTotal).toLocaleString("en-IN"):one;
   if(estimate){
-    estimate.innerHTML="<strong>Estimated support &amp; final material range</strong>"+
-      "<span>Model material: <b>"+volume.toFixed(2)+" CC</b></span>"+
-      "<span>Estimated support material: <b>"+supportMinCC.toFixed(2)+"–"+supportMaxCC.toFixed(2)+" CC</b> <small>(15–30% planning range)</small></span>"+
-      "<span>Estimated total print material: <b>"+totalMinCC.toFixed(2)+"–"+totalMaxCC.toFixed(2)+" CC</b></span>"+
-      "<div class="cc-support-price">Estimated printing price: <b>₹"+Math.round(minTotal).toLocaleString("en-IN")+"–₹"+Math.round(maxTotal).toLocaleString("en-IN")+"</b></div>"+
-      "<small>Support usage is only an estimate. Actual supports depend on model geometry, orientation, support settings and the slicer.</small>";
-  }
+    estimate.innerHTML=`
+      <strong>Estimated support &amp; final material range</strong>
+      <span>Model material: <b>${volume.toFixed(2)} CC</b></span>
+      <span>Estimated support material: <b>${supportMinCC.toFixed(2)}–${supportMaxCC.toFixed(2)} CC</b> <small>(15–30% planning range)</small></span>
+      <span>Estimated total print material: <b>${totalMinCC.toFixed(2)}–${totalMaxCC.toFixed(2)} CC</b></span>
+      <div class="cc-support-price">Estimated printing price: <b>₹${Math.round(minTotal).toLocaleString("en-IN")}–₹${Math.round(maxTotal).toLocaleString("en-IN")}</b></div>
+      <small>Support usage is only an estimate. Actual supports depend on model geometry, orientation, support settings and the slicer.</small>`;
 }
 
 function formatName(file){
