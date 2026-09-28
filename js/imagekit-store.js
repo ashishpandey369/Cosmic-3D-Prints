@@ -5,7 +5,7 @@ export const IMAGEKIT_PUBLIC_KEY = "public_Fzs4VZA4lK9D9u5TOUW7p/889Ww=";
 
 // Cloudflare Worker keeps the ImageKit private key off the frontend.
 // This Worker is deployed from the same GitHub repository.
-export const IMAGEKIT_WORKER_URL = "https://cosmic-3d-prints.arindia-in.workers.dev";
+export const IMAGEKIT_WORKER_URL = "https://cosmic-3d-prints.ashishpandey50659.workers.dev";
 
 function safeFileName(value = "image.webp") {
   const cleaned = String(value)
