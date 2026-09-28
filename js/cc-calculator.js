@@ -1,7 +1,82 @@
 (function(){
 
+// Support-material planning range. Actual support volume depends on orientation, geometry and slicer settings.
 const SUPPORT_MIN_RATE=0.15;
 const SUPPORT_MAX_RATE=0.30;
+
+let occtPromise=null;
+const OCCT_VERSION="0.0.23";
+const OCCT_BASE="https://cdn.jsdelivr.net/npm/occt-import-js@"+OCCT_VERSION+"/dist/";
+
+function loadOCCT(){
+  if(occtPromise)return occtPromise;
+  occtPromise=new Promise((resolve,reject)=>{
+    if(window.occtimportjs){
+      window.occtimportjs({
+        locateFile:file=>OCCT_BASE+file
+      }).then(resolve).catch(reject);
+      return;
+    }
+    const script=document.createElement("script");
+    script.src=OCCT_BASE+"occt-import-js.js";
+    script.async=true;
+    script.onload=()=>{
+      if(typeof window.occtimportjs!=="function"){
+        reject(new Error("CAD engine loaded, but its browser module was not found."));
+        return;
+      }
+      window.occtimportjs({
+        locateFile:file=>OCCT_BASE+file
+      }).then(resolve).catch(reject);
+    };
+    script.onerror=()=>reject(new Error("Could not load the CAD conversion engine. Check your internet connection and try again."));
+    document.head.appendChild(script);
+  });
+  return occtPromise;
+}
+
+function occtMeshVolumeCC(mesh){
+  const positions=mesh?.attributes?.position?.array;
+  const indices=mesh?.index?.array;
+  if(!positions||!positions.length)return 0;
+  let v=0;
+  const add=(ia,ib,ic)=>{
+    const a=ia*3,b=ib*3,c=ic*3;
+    if(c+2>=positions.length)return;
+    const ax=positions[a],ay=positions[a+1],az=positions[a+2];
+    const bx=positions[b],by=positions[b+1],bz=positions[b+2];
+    const cx=positions[c],cy=positions[c+1],cz=positions[c+2];
+    v+=(ax*(by*cz-bz*cy)-ay*(bx*cz-bz*cx)+az*(bx*cy-by*cx))/6;
+  };
+  if(indices&&indices.length){
+    for(let i=0;i+2<indices.length;i+=3)add(indices[i],indices[i+1],indices[i+2]);
+  }else{
+    for(let i=0;i+2<positions.length/3;i+=3)add(i,i+1,i+2);
+  }
+  // OCCT is asked for millimetre output, so mm³ / 1000 = cm³ (CC).
+  return Math.abs(v)/1000;
+}
+
+function occtResultVolumeCC(result){
+  if(!result?.success||!Array.isArray(result.meshes))throw Error("The CAD file could not be converted into a measurable solid.");
+  const total=result.meshes.reduce((sum,mesh)=>sum+occtMeshVolumeCC(mesh),0);
+  if(!Number.isFinite(total)||total<=0)throw Error("The CAD file was opened, but no positive enclosed volume could be measured.");
+  return total;
+}
+
+async function parseSTEPOrIGES(bytes,ext){
+  const occt=await loadOCCT();
+  const params={
+    linearUnit:"millimeter",
+    linearDeflectionType:"bounding_box_ratio",
+    linearDeflection:0.001,
+    angularDeflection:0.5
+  };
+  const result=ext==="step"||ext==="stp"
+    ? occt.ReadStepFile(bytes,params)
+    : occt.ReadIgesFile(bytes,params);
+  return occtResultVolumeCC(result);
+}
 
 const ccRates={
   "sla-white":{minimum:1000,lowRate:35,highRate:32,threshold:100},
@@ -11,23 +86,150 @@ const ccRates={
   "figure-pro":{minimum:2500,lowRate:250,highRate:200,threshold:20}
 };
 
+function meshVolumeCC(tris){
+  let v=0;
+  for(const t of tris){
+    const a=t[0],b=t[1],c=t[2];
+    v+=(a[0]*(b[1]*c[2]-b[2]*c[1])-a[1]*(b[0]*c[2]-b[2]*c[0])+a[2]*(b[0]*c[1]-b[1]*c[0]))/6;
+  }
+  return Math.abs(v)/1000;
+}
+function triVolume(pos,indices,unitFactor){
+  let v=0;
+  for(let i=0;i+2<indices.length;i+=3){
+    const a=pos[indices[i]],b=pos[indices[i+1]],c=pos[indices[i+2]];
+    if(!a||!b||!c)continue;
+    v+=(a[0]*(b[1]*c[2]-b[2]*c[1])-a[1]*(b[0]*c[2]-b[2]*c[0])+a[2]*(b[0]*c[1]-b[1]*c[0]))/6;
+  }
+  return Math.abs(v)*unitFactor;
+}
+function parseSTL(input){
+  const bytes=input instanceof Uint8Array?input:new Uint8Array(input);
+  const text=new TextDecoder().decode(bytes);
+  const nums=[...text.matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/gi)].map(m=>m.slice(1).map(Number)),asciiTris=[];
+  for(let i=0;i+2<nums.length;i+=3)asciiTris.push([nums[i],nums[i+1],nums[i+2]]);
+  if(asciiTris.length)return meshVolumeCC(asciiTris);
+
+  if(bytes.length<84)throw Error("The STL file is incomplete or is not a valid ASCII/binary STL.");
+  const u32=i=>(bytes[i]|(bytes[i+1]<<8)|(bytes[i+2]<<16)|(bytes[i+3]<<24))>>>0;
+  const f32=i=>{
+    const ab=new ArrayBuffer(4);
+    const b=new Uint8Array(ab);b[0]=bytes[i];b[1]=bytes[i+1];b[2]=bytes[i+2];b[3]=bytes[i+3];
+    return new Float32Array(ab)[0];
+  };
+  const count=u32(80),binarySize=84+count*50;
+  if(count>0&&binarySize<=bytes.length){
+    const tris=[];let o=84;
+    for(let i=0;i<count;i++){
+      o+=12;const t=[];
+      for(let j=0;j<3;j++){const x=f32(o),y=f32(o+4),z=f32(o+8);if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z))throw Error("The STL contains invalid coordinate data.");t.push([x,y,z]);o+=12}
+      o+=2;tris.push(t);
+    }
+    return meshVolumeCC(tris);
+  }
+  throw Error("No STL triangles found. Please export a valid ASCII or binary STL.");
+}
+function parseOBJ(text){
+  const v=[],tris=[];
+  for(const line of text.split(/\r?\n/)){const p=line.trim().split(/\s+/);
+    if(p[0]==="v"&&p.length>=4)v.push([+p[1],+p[2],+p[3]]);
+    if(p[0]==="f"&&p.length>=4){const ids=p.slice(1).map(x=>parseInt(x.split("/")[0],10)).map(n=>n<0?v.length+n:n-1);for(let i=1;i<ids.length-1;i++)tris.push([v[ids[0]],v[ids[i]],v[ids[i+1]]])}
+  }
+  if(!tris.length)throw Error("No OBJ faces found");return meshVolumeCC(tris);
+}
+function parseOFF(text){
+  const a=text.replace(/^OFF\s*/i,"").trim().split(/\s+/).map(Number),n=a[0],nf=a[1];let o=3;const v=[];
+  for(let i=0;i<n;i++)v.push([a[o++],a[o++],a[o++]]);
+  const tris=[];for(let i=0;i<nf;i++){const k=a[o++],ids=[];for(let j=0;j<k;j++)ids.push(a[o++]);for(let j=1;j<ids.length-1;j++)tris.push([v[ids[0]],v[ids[j]],v[ids[j+1]]])}
+  if(!tris.length)throw Error("No OFF faces found");return meshVolumeCC(tris);
+}
+function parsePLY(text){
+  const lines=text.split(/\r?\n/);let nv=0,nf=0,end=-1,format="";
+  for(let i=0;i<lines.length;i++){const l=lines[i].trim();if(l.startsWith("format "))format=l.split(/\s+/)[1];if(l.startsWith("element vertex "))nv=+l.split(/\s+/)[2];if(l.startsWith("element face "))nf=+l.split(/\s+/)[2];if(l==="end_header"){end=i;break}}
+  if(format!=="ascii")throw Error("Binary PLY needs server-side conversion");
+  const v=lines.slice(end+1,end+1+nv).map(l=>l.trim().split(/\s+/).slice(0,3).map(Number)),tris=[];
+  for(let i=0;i<nf;i++){const a=lines[end+1+nv+i].trim().split(/\s+/).map(Number),ids=a.slice(1);for(let j=1;j<ids.length-1;j++)tris.push([v[ids[0]],v[ids[j]],v[ids[j+1]]])}
+  if(!tris.length)throw Error("No PLY faces found");return meshVolumeCC(tris);
+}
+function identity(){return[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}
+function mul(a,b){const r=new Array(16);for(let col=0;col<4;col++)for(let row=0;row<4;row++)r[col*4+row]=a[row]*b[col*4]+a[4+row]*b[col*4+1]+a[8+row]*b[col*4+2]+a[12+row]*b[col*4+3];return r}
+function nodeMatrix(n){
+  if(n.matrix)return n.matrix;const q=n.rotation||[0,0,0,1],s=n.scale||[1,1,1],t=n.translation||[0,0,0],x=q[0],y=q[1],z=q[2],w=q[3];
+  return[(1-2*y*y-2*z*z)*s[0],(2*x*y+2*w*z)*s[0],(2*x*z-2*w*y)*s[0],0,(2*x*y-2*w*z)*s[1],(1-2*x*x-2*z*z)*s[1],(2*y*z+2*w*x)*s[1],0,(2*x*z+2*w*y)*s[2],(2*y*z-2*w*x)*s[2],(1-2*x*x-2*y*y)*s[2],0,t[0],t[1],t[2],1]
+}
+function tx(v,m){return[v[0]*m[0]+v[1]*m[4]+v[2]*m[8]+m[12],v[0]*m[1]+v[1]*m[5]+v[2]*m[9]+m[13],v[0]*m[2]+v[1]*m[6]+v[2]*m[10]+m[14]]}
+function accessor(g,a){
+  const bv=g.bufferViews[a.bufferView],b=g.__buffers[bv.buffer],map={5121:[Uint8Array,1],5123:[Uint16Array,2],5125:[Uint32Array,4],5126:[Float32Array,4]},types={SCALAR:1,VEC2:2,VEC3:3,VEC4:4},c=map[a.componentType],n=types[a.type];
+  if(!bv||!c||!n)throw Error("Unsupported GLTF accessor");
+  const C=c[0],size=c[1]*n,start=(bv.byteOffset||0)+(a.byteOffset||0),stride=bv.byteStride||size,out=[];
+  for(let i=0;i<a.count;i++){const x=new C(b,start+i*stride,n);out.push(n===1?x[0]:Array.from(x))}return out;
+}
+function parseGLTF(g){
+  let total=0;
+  function primitive(p,m){const pos=accessor(g,g.accessors[p.attributes.POSITION]).map(x=>tx(x,m));const ind=p.indices==null?pos.map((_,i)=>i):accessor(g,g.accessors[p.indices]);return triVolume(pos,ind,1e6)}
+  function walk(i,parent){const n=g.nodes[i],m=mul(parent,nodeMatrix(n));if(n.mesh!=null)for(const p of g.meshes[n.mesh].primitives||[])total+=primitive(p,m);for(const ch of n.children||[])walk(ch,m)}
+  for(const n of (g.scenes?.[g.scene||0]?.nodes||[]))walk(n,identity());
+  if(total<=0)throw Error("No measurable GLTF mesh found");return total;
+}
+async function parseGLB(buf){
+  const d=new DataView(buf);if(d.getUint32(0,true)!==0x46546c67)throw Error("Invalid GLB");
+  let o=12,json=null,bin=null;while(o<buf.byteLength){const len=d.getUint32(o,true),type=d.getUint32(o+4,true),data=buf.slice(o+8,o+8+len);if(type===0x4e4f534a)json=JSON.parse(new TextDecoder().decode(data));if(type===0x004e4942)bin=data;o+=8+len}
+  if(!json||!bin)throw Error("Incomplete GLB");json.__buffers=[bin];return parseGLTF(json);
+}
+async function parse3MF(buf){
+  const d=new DataView(buf);if(d.getUint32(0,true)!==0x04034b50)throw Error("Invalid 3MF ZIP");let o=0,model=null;
+  while(o+30<=buf.byteLength){const sig=d.getUint32(o,true);if(sig!==0x04034b50)break;const method=d.getUint16(o+8,true),cs=d.getUint32(o+18,true),nl=d.getUint16(o+26,true),xl=d.getUint16(o+28,true),name=new TextDecoder().decode(new Uint8Array(buf,o+30,nl)),data=new Uint8Array(buf,o+30+nl+xl,cs);
+    if(/3d\/3dmodel\.model$/i.test(name)||/\.model$/i.test(name)){if(method===0)model=new TextDecoder().decode(data);else if(method===8){const raw=await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer();model=new TextDecoder().decode(raw)}}
+    o+=30+nl+xl+cs;
+  }
+  if(!model)throw Error("3MF model data not found");const doc=new DOMParser().parseFromString(model,"application/xml"),tris=[];
+  for(const mesh of [...doc.getElementsByTagName("mesh")]){const vs=[...mesh.getElementsByTagName("vertex")].map(x=>[+x.getAttribute("x"),+x.getAttribute("y"),+x.getAttribute("z")]);for(const t of [...mesh.getElementsByTagName("triangle")])tris.push([vs[+t.getAttribute("v1")],vs[+t.getAttribute("v2")],vs[+t.getAttribute("v3")]])}
+  if(!tris.length)throw Error("No 3MF triangles found");return meshVolumeCC(tris);
+}
+async function readFileBytes(file){
+  if(!file)throw new Error("No model file was selected.");
+  if(file.size===0)throw new Error("The selected file is empty.");
+  const buffer=await file.arrayBuffer();
+  const bytes=new Uint8Array(buffer);
+  if(!bytes.length)throw new Error("The selected file is empty.");
+  return bytes;
+}
+async function calculateModelVolume(file){
+  const bytes=await readFileBytes(file),ext=file.name.toLowerCase().split(".").pop();
+  if(ext==="stl")return parseSTL(bytes);
+  const text=()=>new TextDecoder().decode(bytes);
+  if(ext==="obj")return parseOBJ(text());
+  if(ext==="off")return parseOFF(text());
+  if(ext==="ply")return parsePLY(text());
+  if(ext==="3mf")return parse3MF(bytes.buffer);
+  if(ext==="glb")return parseGLB(bytes.buffer);
+  if(ext==="step"||ext==="stp"||ext==="iges"||ext==="igs")return parseSTEPOrIGES(bytes,ext);
+  if(ext==="gltf"){const g=JSON.parse(text());g.__buffers=[];for(const b of g.buffers||[]){if(!b.uri?.startsWith("data:"))throw Error("Use GLB for GLTF files with external .bin files");g.__buffers.push(await(await fetch(b.uri)).arrayBuffer())}return parseGLTF(g)}
+  throw Error("This file is accepted, but automatic CC calculation needs mesh conversion. Use STL, OBJ, 3MF, GLB, GLTF, PLY or OFF for instant calculation.");
+}
 function updateCCPrice(){
-  const material=document.querySelector("#cc-material")?.value;
-  const volume=Number(document.querySelector("#cc-volume")?.value||0);
-  const price=document.querySelector("#cc-price");
-  const breakdown=document.querySelector("#cc-breakdown");
-  const estimate=document.querySelector("#cc-support-estimate");
-  const rate=ccRates[material];
+  const material=document.querySelector("#cc-material")?.value,
+    volume=Number(document.querySelector("#cc-volume")?.value||0),
+    price=document.querySelector("#cc-price"),
+    breakdown=document.querySelector("#cc-breakdown"),
+    estimate=document.querySelector("#cc-support-estimate"),
+    rate=ccRates[material];
+
   if(!rate||!price||!breakdown)return;
+
   if(volume<=0){
     price.textContent="₹0";
     breakdown.textContent="Upload a model or enter CC manually.";
     if(estimate)estimate.innerHTML="";
     return;
   }
+
   const per=volume<rate.threshold?rate.lowRate:rate.highRate;
   const quantity=Math.max(1,Number(document.querySelector("#quote-quantity")?.value||1));
   const raw=volume*per;
+
+  // The model's calculated CC is the base material. Supports are an estimate,
+  // not an exact slicer result, so show a planning range rather than a fixed value.
   const supportMinCC=volume*SUPPORT_MIN_RATE;
   const supportMaxCC=volume*SUPPORT_MAX_RATE;
   const totalMinCC=volume+supportMinCC;
@@ -35,67 +237,63 @@ function updateCCPrice(){
   const baseTotal=raw*quantity;
   const minTotal=totalMinCC*per*quantity;
   const maxTotal=totalMaxCC*per*quantity;
+
+  // Keep the headline amount as the model-only amount; the range below explains
+  // the more realistic material-inclusive estimate.
   price.textContent="₹"+Math.round(baseTotal).toLocaleString("en-IN");
+
   const one=volume.toFixed(2)+" CC × ₹"+per+"/CC = ₹"+Math.round(raw).toLocaleString("en-IN");
-  breakdown.textContent=quantity>1?one+" • "+quantity+" copies = ₹"+Math.round(baseTotal).toLocaleString("en-IN"):one;
+  breakdown.textContent=quantity>1
+    ?one+" • "+quantity+" copies = ₹"+Math.round(baseTotal).toLocaleString("en-IN")
+    :one;
+
   if(estimate){
-    estimate.innerHTML=`
-      <strong>Estimated support &amp; final material range</strong>
-      <span>Model material: <b>${volume.toFixed(2)} CC</b></span>
-      <span>Estimated support material: <b>${supportMinCC.toFixed(2)}–${supportMaxCC.toFixed(2)} CC</b> <small>(15–30% planning range)</small></span>
-      <span>Estimated total print material: <b>${totalMinCC.toFixed(2)}–${totalMaxCC.toFixed(2)} CC</b></span>
-      <div class="cc-support-price">Estimated printing price: <b>₹${Math.round(minTotal).toLocaleString("en-IN")}–₹${Math.round(maxTotal).toLocaleString("en-IN")}</b></div>
-      <small>Support usage is only an estimate. Actual supports depend on model geometry, orientation, support settings and the slicer.</small>`;
+    estimate.innerHTML=
+      "<strong>Estimated support &amp; final material range</strong>"+
+      "<span>Model material: <b>"+volume.toFixed(2)+" CC</b></span>"+
+      "<span>Estimated support material: <b>"+supportMinCC.toFixed(2)+"–"+supportMaxCC.toFixed(2)+" CC</b> <small>(15–30% planning range)</small></span>"+
+      "<span>Estimated total print material: <b>"+totalMinCC.toFixed(2)+"–"+totalMaxCC.toFixed(2)+" CC</b></span>"+
+      "<div class=\"cc-support-price\">Estimated printing price: <b>₹"+Math.round(minTotal).toLocaleString("en-IN")+"–₹"+Math.round(maxTotal).toLocaleString("en-IN")+"</b></div>"+
+      "<small>Support usage is only an estimate. Actual supports depend on model geometry, orientation, support settings and the slicer.</small>";
   }
 }
-
-function formatName(file){
-  const ext=file.name.toLowerCase().split(".").pop();
-  return ({stl:"STL",obj:"OBJ",3mf:"3MF",glb:"GLB",gltf:"GLTF",ply:"PLY",off:"OFF",step:"STEP",stp:"STEP",iges:"IGES",igs:"IGES",fbx:"FBX",3ds:"3DS",dae:"DAE",amf:"AMF",x3d:"X3D",wrl:"VRML",zip:"ZIP"})[ext]||ext.toUpperCase();
-}
-
 document.addEventListener("DOMContentLoaded",()=>{
-  const input=document.querySelector("#cc-file");
-  const volume=document.querySelector("#cc-volume");
-  const status=document.querySelector("#cc-file-status");
-  const name=document.querySelector("#cc-file-name");
-  const preview=document.querySelector("#model-preview");
+  const input=document.querySelector("#cc-file"),volume=document.querySelector("#cc-volume"),status=document.querySelector("#cc-file-status"),name=document.querySelector("#cc-file-name"),preview=document.querySelector("#model-preview");
   let previewTimer=null;
 
   input?.addEventListener("change",async()=>{
     const file=input.files?.[0];
     if(!file)return;
+
     if(previewTimer)clearTimeout(previewTimer);
     preview?.classList.remove("visible");
     name.textContent=file.name;
     status.className="cc-file-status";
+    const cadExt=/\.(step|stp|iges|igs)$/i.test(file.name);
+    status.textContent=cadExt?"Loading CAD engine and calculating solid volume…":"Calculating model volume…";
     volume.readOnly=false;
     volume.value="";
     updateCCPrice();
 
-    const format=formatName(file);
-    status.textContent=/\.(step|stp|iges|igs)$/i.test(file.name)
-      ?"Loading CAD engine and preparing "+format+" model…"
-      :"Loading "+format+" model and calculating volume…";
-
     try{
-      if(!window.CosmicModelIO?.parseFile)throw new Error("3D model engine is still loading. Please wait a moment and select the file again.");
-      const parsed=await window.CosmicModelIO.parseFile(file);
-      const cc=parsed.volumeCC;
-      if(!Number.isFinite(cc)||cc<=0)throw new Error("The model has no positive enclosed volume.");
+      const cc=await calculateModelVolume(file);
+      if(!Number.isFinite(cc)||cc<=0)throw Error("The model has no positive enclosed volume.");
+
       volume.value=cc.toFixed(2);
       volume.readOnly=true;
       status.className="cc-file-status success";
-      status.textContent="Calculated volume: "+cc.toFixed(2)+" CC • "+format+" ready";
+      status.textContent="Calculated volume: "+cc.toFixed(2)+" CC";
       updateCCPrice();
+
+      status.textContent="Calculated volume: "+cc.toFixed(2)+" CC • Preparing 3D preview…";
       previewTimer=setTimeout(()=>{
         preview?.classList.add("visible");
-        window.CosmicPreview?.loadModel(file).catch(()=>{});
-      },250);
+        if(window.CosmicPreview?.loadModel)window.CosmicPreview.loadModel(file);
+      },1500);
     }catch(e){
       volume.readOnly=false;
       status.className="cc-file-status error";
-      status.textContent=(e?.message||"Could not calculate this file. Enter CC manually.")+" You can still enter CC manually if needed.";
+      status.textContent=e.message||"Could not calculate this file. Enter CC manually.";
       preview?.classList.remove("visible");
     }
   });
@@ -106,5 +304,5 @@ document.addEventListener("DOMContentLoaded",()=>{
   updateCCPrice();
 });
 
-window.CosmicCC={updateCCPrice};
+window.CosmicCC={calculateModelVolume,updateCCPrice};
 })();
