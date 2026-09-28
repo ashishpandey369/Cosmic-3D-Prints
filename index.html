@@ -12,7 +12,7 @@
   <div class="announcement-bar"><div class="container announcement-inner"><a href="tel:+919448588793" aria-label="Call Cosmic 3D Prints">☎ <span>+91 94485 88793</span></a><a href="mailto:Info@giftyhamper.com">Mail us : Info@giftyhamper.com</a><span>Address : 49/1/19, 4th Cross Magadi main road, Bengaluru, Karnataka, 560091</span></div></div>
   <header class="site-header marketplace-header">
     <div class="container header-inner marketplace-header-inner">
-      <a class="brand marketplace-brand" href="index.html" aria-label="Cosmic 3D Prints home"><img src="assets/cosmic-wordmark" alt="Cosmic 3D Prints" class="brand-logo"></a>
+      <a class="brand marketplace-brand" href="index.html" aria-label="Cosmic 3D Prints home"><span class="cosmic-wordmark">Cosmic 3D Prints</span></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span><span></span></button>
       <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
         <a href="index.html">Home</a><a href="shop.html">Shop</a><a href="index.html#occasions">3D Printing</a><a href="index.html#corporate">Custom Orders</a><a href="about.html">About Us</a><a href="contact.html">Contact</a><a href="login.html">Account / Login</a>
@@ -154,11 +154,19 @@
     <div class="container">
       <div class="cc-calculator-card">
         <div class="cc-calculator-copy">
-          <p class="eyebrow">Quick estimate</p>
+          <p class="eyebrow">Instant estimate</p>
           <h2>3D Print CC Calculator</h2>
-          <p>Enter your model volume in cubic centimetres (CC) to get an instant printing estimate.</p>
+          <p>Upload your 3D model and we'll calculate its physical volume in CC. You can also enter the volume manually.</p>
+          <div class="cc-supported">Supports automatic volume calculation for <b>STL, OBJ, PLY, OFF, 3MF, GLB and GLTF</b>. Other CAD files can still be uploaded for future processing.</div>
         </div>
         <div class="cc-calculator-form">
+          <label class="cc-upload" for="cc-file">
+            <span class="cc-upload-icon">↑</span>
+            <span><strong>Upload 3D model</strong><small>STL, OBJ, 3MF, GLB, GLTF, PLY, OFF and more</small></span>
+          </label>
+          <input id="cc-file" type="file" class="cc-file-input" accept=".stl,.obj,.3mf,.glb,.gltf,.ply,.off,.step,.stp,.iges,.igs,.fbx,.3ds,.dae,.amf,.x3d,.wrl,.zip">
+          <div id="cc-file-name" class="cc-file-name">No model selected</div>
+          <div id="cc-file-status" class="cc-file-status" aria-live="polite">Upload a model to calculate its volume.</div>
           <label for="cc-material">Material</label>
           <select id="cc-material">
             <option value="sla-white">SLA ABS White</option>
@@ -168,22 +176,23 @@
             <option value="figure-pro">Figure Pro Black / Rubber</option>
           </select>
           <label for="cc-volume">Model volume (CC)</label>
-          <input id="cc-volume" type="number" min="0" step="0.1" placeholder="e.g. 85">
+          <input id="cc-volume" type="number" min="0" step="0.01" placeholder="Calculated automatically">
           <div class="cc-result" aria-live="polite">
             <span>Estimated price</span>
             <strong id="cc-price">₹0</strong>
           </div>
-          <small id="cc-breakdown">Enter the model volume to calculate.</small>
+          <small id="cc-breakdown">Upload a model or enter CC manually.</small>
         </div>
       </div>
     </div>
   </section>
 
-  <footer class="site-footer"><div class="container footer-grid"><div class="footer-brand"><a class="brand" href="index.html"><img src="assets/cosmic-wordmark" alt="Cosmic 3D Prints" class="brand-logo"></a><span class="footer-follow">follow us:</span><div class="footer-socials" aria-label="Social media"><a class="footer-social" href="#" aria-label="Facebook">f</a><a class="footer-social" href="#" aria-label="X">𝕏</a><a class="footer-social" href="#" aria-label="Pinterest">p</a><a class="footer-social" href="#" aria-label="LinkedIn">in</a></div></div><div><h3>Product Categories</h3><a href="shop.html">3D Printed Products</a><a href="shop.html">Custom 3D Printing</a><a href="shop.html">Functional Prints</a><a href="shop.html">Engineering Parts</a><a href="shop.html">Functional Parts Gifts</a><a href="shop.html">Prototypes</a><a href="shop.html">Figurines</a><a href="shop.html">Replacement Parts</a><a href="shop.html">Custom Designs</a><a href="shop.html">Premium 3D Prints</a></div><div><h3>Useful links</h3><a href="index.html">Home</a><a href="about.html">About Us</a><a href="contact.html">Contact Us</a></div><div><h3>Contact Us</h3><div class="footer-contact-details"><p>49/1/19, 4th Cross Magadi main road,<br>Bengaluru, Karnataka, 560091</p><p><a href="tel:+919448588793">+91 94485 88793</a></p><p><a href="mailto:Info@giftyhamper.com">Info@giftyhamper.com</a></p></div></div></div><div class="container footer-bottom"><span>Copyright © <span data-current-year>2026</span> Cosmic 3D Printss. All rights reserved.</span><div class="payment-badges" aria-label="Accepted payment methods"><span class="payment-badge">VISA</span><span class="payment-badge">MasterCard</span><span class="payment-badge">PayPal</span><span class="payment-badge">RuPay</span><span class="payment-badge">UPI</span></div></div></footer>
+  <footer class="site-footer"><div class="container footer-grid"><div class="footer-brand"><a class="brand" href="index.html"><img src="assets/cosmic-wordmark" alt="Cosmic 3D Prints" class="brand-logo"></a><span class="footer-follow">follow us:</span><div class="footer-socials" aria-label="Social media"><a class="footer-social" href="#" aria-label="Facebook">f</a><a class="footer-social" href="#" aria-label="X">𝕏</a><a class="footer-social" href="#" aria-label="Pinterest">p</a><a class="footer-social" href="#" aria-label="LinkedIn">in</a></div></div><div><h3>Product Categories</h3><a href="shop.html">3D Printed Products</a><a href="shop.html">Custom 3D Printing</a><a href="shop.html">Functional Prints</a><a href="shop.html">Engineering Parts</a><a href="shop.html">Functional Parts Gifts</a><a href="shop.html">Prototypes</a><a href="shop.html">Figurines</a><a href="shop.html">Replacement Parts</a><a href="shop.html">Custom Designs</a><a href="shop.html">Premium 3D Prints</a></div><div><h3>Useful links</h3><a href="index.html">Home</a><a href="about.html">About Us</a><a href="contact.html">Contact Us</a></div><div><h3>Contact Us</h3><div class="footer-contact-details"><p>49/1/19, 4th Cross Magadi main road,<br>Bengaluru, Karnataka, 560091</p><p><a href="tel:+919448588793">+91 94485 88793</a></p><p><a href="mailto:Info@giftyhamper.com">Info@giftyhamper.com</a></p></div></div></div><div class="container footer-bottom"><span>Copyright © <span data-current-year>2026</span> Cosmic 3D Prints. All rights reserved.</span><div class="payment-badges" aria-label="Accepted payment methods"><span class="payment-badge">VISA</span><span class="payment-badge">MasterCard</span><span class="payment-badge">PayPal</span><span class="payment-badge">RuPay</span><span class="payment-badge">UPI</span></div></div></footer>
   <script src="js/main.js" defer></script>
   <script src="js/location.js" defer></script>
   <script type="module" src="js/home-marketplace.js?v=5"></script>
   <script type="module" src="js/most-sold-slideshow.js?v=4"></script>
   <script src="js/gift-transition.js" defer></script>
-  <script src="js/cc-calculator.js" defer></script>\n</body>
+  <script src="js/cc-calculator.js" defer></script>
+</body>
 </html>
