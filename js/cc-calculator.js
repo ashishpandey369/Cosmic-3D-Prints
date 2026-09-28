@@ -26,7 +26,12 @@ function triVolume(pos,indices,unitFactor){
 }
 function parseSTL(input){
   const bytes=input instanceof Uint8Array?input:new Uint8Array(input);
-  if(bytes.length<84)throw Error("The STL file is too small or invalid.");
+  const text=new TextDecoder().decode(bytes);
+  const nums=[...text.matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/gi)].map(m=>m.slice(1).map(Number)),asciiTris=[];
+  for(let i=0;i+2<nums.length;i+=3)asciiTris.push([nums[i],nums[i+1],nums[i+2]]);
+  if(asciiTris.length)return meshVolumeCC(asciiTris);
+
+  if(bytes.length<84)throw Error("The STL file is incomplete or is not a valid ASCII/binary STL.");
   const u32=i=>(bytes[i]|(bytes[i+1]<<8)|(bytes[i+2]<<16)|(bytes[i+3]<<24))>>>0;
   const f32=i=>{
     const ab=new ArrayBuffer(4);
@@ -43,10 +48,7 @@ function parseSTL(input){
     }
     return meshVolumeCC(tris);
   }
-  const nums=[...new TextDecoder().decode(bytes).matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/gi)].map(m=>m.slice(1).map(Number)),tris=[];
-  for(let i=0;i+2<nums.length;i+=3)tris.push([nums[i],nums[i+1],nums[i+2]]);
-  if(!tris.length)throw Error("No STL triangles found.");
-  return meshVolumeCC(tris);
+  throw Error("No STL triangles found. Please export a valid ASCII or binary STL.");
 }
 function parseOBJ(text){
   const v=[],tris=[];
@@ -105,22 +107,13 @@ async function parse3MF(buf){
   for(const mesh of [...doc.getElementsByTagName("mesh")]){const vs=[...mesh.getElementsByTagName("vertex")].map(x=>[+x.getAttribute("x"),+x.getAttribute("y"),+x.getAttribute("z")]);for(const t of [...mesh.getElementsByTagName("triangle")])tris.push([vs[+t.getAttribute("v1")],vs[+t.getAttribute("v2")],vs[+t.getAttribute("v3")]])}
   if(!tris.length)throw Error("No 3MF triangles found");return meshVolumeCC(tris);
 }
-function readFileBytes(file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=()=>{
-      try{
-        const result=reader.result;
-        if(!(result instanceof ArrayBuffer)) throw new Error("Browser returned an unexpected file format.");
-        const bytes=new Uint8Array(result);
-        if(bytes.byteLength===0) throw new Error("The selected file is empty.");
-        resolve(bytes);
-      }catch(err){reject(err)}
-    };
-    reader.onerror=()=>reject(new Error("The browser could not read this file."));
-    reader.onabort=()=>reject(new Error("File reading was cancelled."));
-    reader.readAsArrayBuffer(file);
-  });
+async function readFileBytes(file){
+  if(!file)throw new Error("No model file was selected.");
+  if(file.size===0)throw new Error("The selected file is empty.");
+  const buffer=await file.arrayBuffer();
+  const bytes=new Uint8Array(buffer);
+  if(!bytes.length)throw new Error("The selected file is empty.");
+  return bytes;
 }
 async function calculateModelVolume(file){
   const bytes=await readFileBytes(file),ext=file.name.toLowerCase().split(".").pop();
