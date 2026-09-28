@@ -24,47 +24,28 @@ function triVolume(pos,indices,unitFactor){
   }
   return Math.abs(v)*unitFactor;
 }
-function parseSTL(buf){
-  const bytes = new Uint8Array(buf);
-  if(bytes.length < 84) throw Error("The STL file is too small or invalid.");
-
-  // Read IEEE-754 little-endian float without DataView.
-  function float32LE(i){
-    const b0=bytes[i],b1=bytes[i+1],b2=bytes[i+2],b3=bytes[i+3];
-    const sign=(b3&128)?-1:1, exp=((b3&127)<<1)|(b2>>7), mant=((b2&127)<<16)|(b1<<8)|b0;
-    if(exp===255) return mant ? NaN : sign*Infinity;
-    if(exp===0) return sign*Math.pow(2,-126)*(mant/0x800000);
-    return sign*Math.pow(2,exp-127)*(1+mant/0x800000);
-  }
-  function uint32LE(i){
-    return (bytes[i] | (bytes[i+1]<<8) | (bytes[i+2]<<16) | (bytes[i+3]<<24)) >>> 0;
-  }
-
-  const count=uint32LE(80);
-  const binarySize=84+count*50;
-  const isBinary=count>0 && binarySize<=bytes.length;
-
-  if(isBinary){
-    const tris=[]; let o=84;
+function parseSTL(input){
+  const bytes=input instanceof Uint8Array?input:new Uint8Array(input);
+  if(bytes.length<84)throw Error("The STL file is too small or invalid.");
+  const u32=i=>(bytes[i]|(bytes[i+1]<<8)|(bytes[i+2]<<16)|(bytes[i+3]<<24))>>>0;
+  const f32=i=>{
+    const ab=new ArrayBuffer(4);
+    const b=new Uint8Array(ab);b[0]=bytes[i];b[1]=bytes[i+1];b[2]=bytes[i+2];b[3]=bytes[i+3];
+    return new Float32Array(ab)[0];
+  };
+  const count=u32(80),binarySize=84+count*50;
+  if(count>0&&binarySize<=bytes.length){
+    const tris=[];let o=84;
     for(let i=0;i<count;i++){
-      o+=12;
-      const t=[];
-      for(let j=0;j<3;j++){
-        const x=float32LE(o),y=float32LE(o+4),z=float32LE(o+8);
-        if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z)) throw Error("The STL contains invalid coordinate data.");
-        t.push([x,y,z]); o+=12;
-      }
-      o+=2; tris.push(t);
+      o+=12;const t=[];
+      for(let j=0;j<3;j++){const x=f32(o),y=f32(o+4),z=f32(o+8);if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z))throw Error("The STL contains invalid coordinate data.");t.push([x,y,z]);o+=12}
+      o+=2;tris.push(t);
     }
     return meshVolumeCC(tris);
   }
-
-  // ASCII STL fallback.
-  const text=new TextDecoder().decode(bytes);
-  const nums=[...text.matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/gi)].map(m=>m.slice(1).map(Number));
-  const tris=[];
-  for(let i=0;i+2<nums.length;i+=3) tris.push([nums[i],nums[i+1],nums[i+2]]);
-  if(!tris.length) throw Error("No STL triangles found.");
+  const nums=[...new TextDecoder().decode(bytes).matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/gi)].map(m=>m.slice(1).map(Number)),tris=[];
+  for(let i=0;i+2<nums.length;i+=3)tris.push([nums[i],nums[i+1],nums[i+2]]);
+  if(!tris.length)throw Error("No STL triangles found.");
   return meshVolumeCC(tris);
 }
 function parseOBJ(text){
@@ -124,22 +105,33 @@ async function parse3MF(buf){
   for(const mesh of [...doc.getElementsByTagName("mesh")]){const vs=[...mesh.getElementsByTagName("vertex")].map(x=>[+x.getAttribute("x"),+x.getAttribute("y"),+x.getAttribute("z")]);for(const t of [...mesh.getElementsByTagName("triangle")])tris.push([vs[+t.getAttribute("v1")],vs[+t.getAttribute("v2")],vs[+t.getAttribute("v3")]])}
   if(!tris.length)throw Error("No 3MF triangles found");return meshVolumeCC(tris);
 }
-async function readFileAsArrayBuffer(file){
-  const buffer = await new Response(file).arrayBuffer();
-  if (!(buffer instanceof ArrayBuffer) || buffer.byteLength === 0) {
-    throw new Error("The selected file is empty or could not be read.");
-  }
-  return buffer;
+function readFileBytes(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const result=reader.result;
+        if(!(result instanceof ArrayBuffer)) throw new Error("Browser returned an unexpected file format.");
+        const bytes=new Uint8Array(result);
+        if(bytes.byteLength===0) throw new Error("The selected file is empty.");
+        resolve(bytes);
+      }catch(err){reject(err)}
+    };
+    reader.onerror=()=>reject(new Error("The browser could not read this file."));
+    reader.onabort=()=>reject(new Error("File reading was cancelled."));
+    reader.readAsArrayBuffer(file);
+  });
 }
 async function calculateModelVolume(file){
-  const buf=await readFileAsArrayBuffer(file),ext=file.name.toLowerCase().split(".").pop();
-  if(ext==="stl")return parseSTL(buf);
-  if(ext==="obj")return parseOBJ(new TextDecoder().decode(buf));
-  if(ext==="off")return parseOFF(new TextDecoder().decode(buf));
-  if(ext==="ply")return parsePLY(new TextDecoder().decode(buf));
-  if(ext==="3mf")return parse3MF(buf);
-  if(ext==="glb")return parseGLB(buf);
-  if(ext==="gltf"){const g=JSON.parse(new TextDecoder().decode(buf));g.__buffers=[];for(const b of g.buffers||[]){if(!b.uri?.startsWith("data:"))throw Error("Use GLB for GLTF files with external .bin files");g.__buffers.push(await(await fetch(b.uri)).arrayBuffer())}return parseGLTF(g)}
+  const bytes=await readFileBytes(file),ext=file.name.toLowerCase().split(".").pop();
+  if(ext==="stl")return parseSTL(bytes);
+  const text=()=>new TextDecoder().decode(bytes);
+  if(ext==="obj")return parseOBJ(text());
+  if(ext==="off")return parseOFF(text());
+  if(ext==="ply")return parsePLY(text());
+  if(ext==="3mf")return parse3MF(bytes.buffer);
+  if(ext==="glb")return parseGLB(bytes.buffer);
+  if(ext==="gltf"){const g=JSON.parse(text());g.__buffers=[];for(const b of g.buffers||[]){if(!b.uri?.startsWith("data:"))throw Error("Use GLB for GLTF files with external .bin files");g.__buffers.push(await(await fetch(b.uri)).arrayBuffer())}return parseGLTF(g)}
   throw Error("This file is accepted, but automatic CC calculation needs mesh conversion. Use STL, OBJ, 3MF, GLB, GLTF, PLY or OFF for instant calculation.");
 }
 function updateCCPrice(){
