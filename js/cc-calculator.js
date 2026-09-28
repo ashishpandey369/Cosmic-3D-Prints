@@ -1,5 +1,9 @@
 (function(){
 
+// Support-material planning range. Actual support volume depends on orientation, geometry and slicer settings.
+const SUPPORT_MIN_RATE=0.15;
+const SUPPORT_MAX_RATE=0.30;
+
 const ccRates={
   "sla-white":{minimum:1000,lowRate:35,highRate:32,threshold:100},
   "sla-clear":{minimum:1500,lowRate:60,highRate:55,threshold:100},
@@ -129,11 +133,54 @@ async function calculateModelVolume(file){
   throw Error("This file is accepted, but automatic CC calculation needs mesh conversion. Use STL, OBJ, 3MF, GLB, GLTF, PLY or OFF for instant calculation.");
 }
 function updateCCPrice(){
-  const material=document.querySelector("#cc-material")?.value,volume=Number(document.querySelector("#cc-volume")?.value||0),price=document.querySelector("#cc-price"),breakdown=document.querySelector("#cc-breakdown"),rate=ccRates[material];
-  if(!rate||!price||!breakdown)return;if(volume<=0){price.textContent="₹0";breakdown.textContent="Upload a model or enter CC manually.";return}
-  const per=volume<rate.threshold?rate.lowRate:rate.highRate,raw=volume*per,quantity=Math.max(1,Number(document.querySelector("#quote-quantity")?.value||1)),total=raw*quantity;price.textContent="₹"+Math.round(total).toLocaleString("en-IN");
+  const material=document.querySelector("#cc-material")?.value,
+    volume=Number(document.querySelector("#cc-volume")?.value||0),
+    price=document.querySelector("#cc-price"),
+    breakdown=document.querySelector("#cc-breakdown"),
+    estimate=document.querySelector("#cc-support-estimate"),
+    rate=ccRates[material];
+
+  if(!rate||!price||!breakdown)return;
+
+  if(volume<=0){
+    price.textContent="₹0";
+    breakdown.textContent="Upload a model or enter CC manually.";
+    if(estimate)estimate.innerHTML="";
+    return;
+  }
+
+  const per=volume<rate.threshold?rate.lowRate:rate.highRate;
+  const quantity=Math.max(1,Number(document.querySelector("#quote-quantity")?.value||1));
+  const raw=volume*per;
+
+  // The model's calculated CC is the base material. Supports are an estimate,
+  // not an exact slicer result, so show a planning range rather than a fixed value.
+  const supportMinCC=volume*SUPPORT_MIN_RATE;
+  const supportMaxCC=volume*SUPPORT_MAX_RATE;
+  const totalMinCC=volume+supportMinCC;
+  const totalMaxCC=volume+supportMaxCC;
+  const baseTotal=raw*quantity;
+  const minTotal=totalMinCC*per*quantity;
+  const maxTotal=totalMaxCC*per*quantity;
+
+  // Keep the headline amount as the model-only amount; the range below explains
+  // the more realistic material-inclusive estimate.
+  price.textContent="₹"+Math.round(baseTotal).toLocaleString("en-IN");
+
   const one=volume.toFixed(2)+" CC × ₹"+per+"/CC = ₹"+Math.round(raw).toLocaleString("en-IN");
-  breakdown.textContent=quantity>1?one+" • "+quantity+" copies = ₹"+Math.round(total).toLocaleString("en-IN"):one;
+  breakdown.textContent=quantity>1
+    ?one+" • "+quantity+" copies = ₹"+Math.round(baseTotal).toLocaleString("en-IN")
+    :one;
+
+  if(estimate){
+    estimate.innerHTML=
+      "<strong>Estimated support &amp; final material range</strong>"+
+      "<span>Model material: <b>"+volume.toFixed(2)+" CC</b></span>"+
+      "<span>Estimated support material: <b>"+supportMinCC.toFixed(2)+"–"+supportMaxCC.toFixed(2)+" CC</b> <small>(15–30% planning range)</small></span>"+
+      "<span>Estimated total print material: <b>"+totalMinCC.toFixed(2)+"–"+totalMaxCC.toFixed(2)+" CC</b></span>"+
+      "<div class=\"cc-support-price\">Estimated printing price: <b>₹"+Math.round(minTotal).toLocaleString("en-IN")+"–₹"+Math.round(maxTotal).toLocaleString("en-IN")+"</b></div>"+
+      "<small>Support usage is only an estimate. Actual supports depend on model geometry, orientation, support settings and the slicer.</small>";
+  }
 }
 document.addEventListener("DOMContentLoaded",()=>{
   const input=document.querySelector("#cc-file"),volume=document.querySelector("#cc-volume"),status=document.querySelector("#cc-file-status"),name=document.querySelector("#cc-file-name"),preview=document.querySelector("#model-preview");
