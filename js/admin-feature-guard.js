@@ -42,7 +42,7 @@ function showFeatureBlocked(feature) {
   document.body.innerHTML = `
     <main style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#fbf7fa;font-family:Arial,sans-serif;">
       <section style="width:min(520px,100%);background:#fff;border:1px solid #eadde5;border-radius:20px;padding:32px;box-shadow:0 20px 60px rgba(36,29,43,.08);">
-        <p style="font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#8c8177;">Gifty Hamper</p>
+        <p style="font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#8c8177;">Cosmic 3D Prints</p>
         <h1 style="margin:8px 0 10px;">Feature unavailable</h1>
         <p style="color:#6f6877;line-height:1.6;">The Super Admin has currently hidden the <strong>${feature}</strong> feature for this account.</p>
         <a href="admin.html" style="display:inline-block;margin-top:12px;padding:11px 16px;border-radius:10px;background:#222;color:#fff;text-decoration:none;">Return to dashboard</a>
@@ -58,7 +58,7 @@ function showAccessBlocked(reason) {
   document.body.innerHTML = `
     <main style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#fbf7fa;font-family:Arial,sans-serif;">
       <section style="width:min(560px,100%);background:#fff;border:1px solid #eadde5;border-radius:20px;padding:34px;box-shadow:0 20px 60px rgba(36,29,43,.08);text-align:center;">
-        <p style="font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#8c8177;">Gifty Hamper</p>
+        <p style="font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#8c8177;">Cosmic 3D Prints</p>
         <h1 style="margin:8px 0 10px;">${ownerAccountExpired ? "Owner access unavailable" : "Admin access unavailable"}</h1>
         <p style="color:#6f6877;line-height:1.6;">
           ${ownerExpired
