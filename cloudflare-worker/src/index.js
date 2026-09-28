@@ -69,7 +69,7 @@ async function requireCatalogStaff(request, env) {
     return { ok: false, status: 401, error: "Invalid Firebase ID token." };
   }
 
-  const projectId = env.FIREBASE_PROJECT_ID || "gifty-hamper";
+  const projectId = env.FIREBASE_PROJECT_ID || "cosmic-3d-bc4d3";
   const uid = claims.sub;
   const userUrl =
     "https://firestore.googleapis.com/v1/projects/" +
@@ -135,7 +135,7 @@ function safeFileName(value = "image.webp") {
   return cleaned || "image.webp";
 }
 
-function safeFolder(value, fallback = "gifty-hamper/other") {
+function safeFolder(value, fallback = "cosmic/other") {
   const cleaned = String(value || fallback)
     .trim()
     .replace(/[^a-zA-Z0-9/_-]+/g, "_")
@@ -290,7 +290,7 @@ export default {
 
     return json(
       {
-        service: "gifty-hamper-imagekit",
+        service: "cosmic-3d-prints-imagekit",
         status: "ok",
         endpoints: ["/imagekit/auth", "/imagekit/import-url", "/imagekit/delete"]
       },
