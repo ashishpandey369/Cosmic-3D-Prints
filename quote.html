@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Cosmic 3D Prints — upload your 3D model, get an approximate print price, or tell us your idea and we'll design and print it.">
+<title>Custom Design & Print | Cosmic 3D Prints</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/cc-calculator.css">
+<link rel="stylesheet" href="css/quote.css">
+</head>
+<body class="marketplace-body">
+<div class="announcement-bar"><div class="container announcement-inner"><a href="tel:+919448588793">☎ <span>+91 94485 88793</span></a><a href="mailto:Info@giftyhamper.com">Mail us : Info@giftyhamper.com</a><span>Address : 49/1/19, 4th Cross Magadi main road, Bengaluru, Karnataka, 560091</span></div></div>
+<header class="site-header marketplace-header">
+  <div class="container header-inner marketplace-header-inner">
+    <a class="brand marketplace-brand" href="index.html" aria-label="Cosmic 3D Prints home"><img src="assets/cosmic-logo.svg" alt="Cosmic 3D Prints" class="brand-logo"></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span><span></span></button>
+    <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
+      <a href="index.html">Home</a><a href="shop.html">Shop</a><a href="index.html#occasions">3D Printing</a><a class="active" href="quote.html">Custom Design &amp; Print</a><a href="about.html">About Us</a><a href="contact.html">Contact</a><a href="login.html">Account / Login</a>
+    </nav>
+    <form class="marketplace-header-search" id="header-search" role="search"><span aria-hidden="true">⌕</span><input id="header-search-input" type="search" placeholder="Search products, prints or SKU" aria-label="Search products"><button type="submit">Search</button></form>
+    <div class="header-actions marketplace-header-actions"><button class="location-button" type="button" aria-label="Set delivery location"><span>⌖</span><span>Deliver to</span><small data-location-label>Set location</small></button><a class="icon-button marketplace-cart-button" href="cart.html" aria-label="Shopping cart">🛒<span id="cart-count" class="cart-count">0</span></a></div>
+  </div>
+</header>
+
+<main>
+<section class="quote-hero">
+  <div class="container">
+    <div class="quote-hero-card">
+      <div>
+        <p class="eyebrow">Bring ideas to life</p>
+        <h1>You bring the idea.<br><em>We design, print &amp; make it real.</em></h1>
+        <p>Already have a 3D model? Upload it and get an approximate printing amount. Don't have a model yet? Tell us what you need and our team can help turn the idea into a printable design.</p>
+        <div class="quote-points"><span>✓ 3D model pricing</span><span>✓ Custom design support</span><span>✓ Prototypes &amp; functional parts</span></div>
+      </div>
+      <div class="quote-hero-badge"><strong>IDEA</strong><span>→</span><strong>DESIGN</strong><span>→</span><strong>PRINT</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="quote-section">
+<div class="container">
+<div class="quote-grid">
+<div class="quote-main">
+  <div class="quote-card">
+    <div class="quote-card-head"><div><p class="eyebrow">01 · Model &amp; estimate</p><h2>Upload your 3D file</h2><p>We'll calculate the model volume when the file format supports browser-side geometry analysis.</p></div></div>
+    <label class="quote-upload" for="cc-file"><span class="cc-upload-icon">↑</span><span><strong>Upload 3D model</strong><small>STL, OBJ, 3MF, GLB, GLTF, PLY, OFF, STEP, IGES, FBX, 3DS and more</small></span></label>
+    <input id="cc-file" type="file" class="cc-file-input" accept=".stl,.obj,.3mf,.glb,.gltf,.ply,.off,.step,.stp,.iges,.igs,.fbx,.3ds,.dae,.amf,.x3d,.wrl,.zip">
+    <div id="cc-file-name" class="cc-file-name">No model selected</div>
+    <div id="cc-file-status" class="cc-file-status" aria-live="polite">Upload a model to calculate its volume.</div>
+
+    <div class="quote-form-grid">
+      <div><label for="cc-material">Material</label><select id="cc-material"><option value="sla-white">SLA ABS White</option><option value="sla-clear">SLA ABS Clear Transparent</option><option value="mjf-pa12">MJF Nylon PA12 Grey</option><option value="sls-pa12">SLS Nylon PA12 White</option><option value="figure-pro">Figure Pro Black / Rubber</option></select></div>
+      <div><label for="quote-quantity">Quantity</label><input id="quote-quantity" type="number" min="1" value="1"></div>
+      <div class="full"><label for="cc-volume">Model volume (CC)</label><input id="cc-volume" type="number" min="0" step="0.01" placeholder="Calculated automatically or enter CC manually"></div>
+    </div>
+
+    <div class="cc-result quote-result" aria-live="polite"><span>Approximate printing amount</span><strong id="cc-price">₹0</strong></div>
+    <small id="cc-breakdown">Upload a model or enter CC manually.</small>
+    <p class="quote-note">This is an approximate estimate. Final pricing can vary based on orientation, supports, finishing, infill, quantity and the actual manufacturing process.</p>
+  </div>
+
+  <div class="quote-card">
+    <div class="quote-card-head"><p class="eyebrow">02 · No model? No problem.</p><h2>Tell us your idea</h2><p>Describe what you want and we'll help with the design before printing.</p></div>
+    <div class="quote-form-grid">
+      <div><label for="quote-name">Your name</label><input id="quote-name" type="text" placeholder="Your name"></div>
+      <div><label for="quote-contact">Phone / WhatsApp</label><input id="quote-contact" type="tel" placeholder="+91"></div>
+      <div><label for="quote-email">Email</label><input id="quote-email" type="email" placeholder="you@example.com"></div>
+      <div><label for="quote-type">What do you need?</label><select id="quote-type"><option>Custom product</option><option>Functional part</option><option>Engineering component</option><option>Prototype</option><option>Figurine / model</option><option>Replacement part</option><option>Enclosure</option><option>Other</option></select></div>
+      <div class="full"><label for="quote-description">Describe your idea</label><textarea id="quote-description" rows="5" placeholder="Tell us what you want to make, approximate size, purpose, preferred material, colours, quantity, etc."></textarea></div>
+      <div class="full"><label class="quote-secondary-upload" for="quote-reference"><span>＋</span> Add reference images or files</label><input id="quote-reference" type="file" multiple accept="image/*,.pdf,.stl,.obj,.3mf,.step,.stp,.iges,.igs,.zip"></div>
+    </div>
+    <button class="quote-submit" type="button" id="quote-submit">Request a design &amp; print quote <b>→</b></button>
+    <p class="quote-submit-note" id="quote-submit-note">We'll prepare the details for your enquiry. No payment is taken here.</p>
+  </div>
+</div>
+
+<aside class="quote-side">
+  <div class="quote-side-card">
+    <p class="eyebrow">How it works</p>
+    <div class="quote-step"><b>01</b><div><strong>Share your idea</strong><span>Upload a model or describe what you want.</span></div></div>
+    <div class="quote-step"><b>02</b><div><strong>We review it</strong><span>We check geometry, material and manufacturing requirements.</span></div></div>
+    <div class="quote-step"><b>03</b><div><strong>Get an estimate</strong><span>See an approximate amount or receive a custom quote.</span></div></div>
+    <div class="quote-step"><b>04</b><div><strong>Design → Print</strong><span>Once confirmed, we turn the idea into a real part.</span></div></div>
+  </div>
+  <div class="quote-side-card quote-materials"><p class="eyebrow">We can make</p><h3>From ideas to real parts</h3><ul><li>Custom designs</li><li>Functional parts</li><li>Prototypes &amp; enclosures</li><li>Figurines &amp; models</li><li>Replacement parts</li><li>Engineering components</li></ul></div>
+</aside>
+</div>
+</div>
+</section>
+</main>
+
+<footer class="site-footer"><div class="container footer-grid"><div class="footer-brand"><a class="brand" href="index.html"><img src="assets/cosmic-logo.svg" alt="Cosmic 3D Prints" class="brand-logo"></a><span class="footer-follow">follow us:</span><div class="footer-socials" aria-label="Social media"><a class="footer-social" href="#">f</a><a class="footer-social" href="#">𝕏</a><a class="footer-social" href="#">p</a><a class="footer-social" href="#">in</a></div></div><div><h3>Product Categories</h3><a href="shop.html">3D Printed Products</a><a href="shop.html">Custom 3D Printing</a><a href="shop.html">Functional Prints</a><a href="shop.html">Engineering Parts</a><a href="shop.html">Prototypes</a></div><div><h3>Useful links</h3><a href="index.html">Home</a><a href="shop.html">Shop</a><a href="quote.html">Custom Design &amp; Print</a></div><div><h3>Contact Us</h3><div class="footer-contact-details"><p>49/1/19, 4th Cross Magadi main road,<br>Bengaluru, Karnataka, 560091</p><p><a href="tel:+919448588793">+91 94485 88793</a></p><p><a href="mailto:Info@giftyhamper.com">Info@giftyhamper.com</a></p></div></div></div><div class="container footer-bottom"><span>Copyright © <span data-current-year>2026</span> Cosmic 3D Prints. All rights reserved.</span></div></footer>
+<script src="js/main.js" defer></script>
+<script src="js/location.js" defer></script>
+<script src="js/cc-calculator.js" defer></script>
+<script src="js/quote.js" defer></script>
+</body>
+</html>
