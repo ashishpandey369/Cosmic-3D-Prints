@@ -72,7 +72,22 @@
     <div class="cc-result quote-result" aria-live="polite"><span>Approximate printing amount</span><strong id="cc-price">₹0</strong></div>
     <small id="cc-breakdown">Upload a model or enter CC manually.</small>
     <p class="quote-note">This is an approximate estimate. Final pricing can vary based on orientation, supports, finishing, infill, quantity and the actual manufacturing process.</p>
-  </div>iv>
+    
+    <div id="model-preview" class="model-preview" aria-live="polite">
+      <div class="model-preview-head">
+        <div>
+          <p class="eyebrow">3D preview</p>
+          <h3>Your uploaded model</h3>
+        </div>
+        <span class="model-preview-badge">Interactive</span>
+      </div>
+      <div class="model-preview-stage">
+        <canvas id="model-preview-canvas"></canvas>
+        <div id="model-preview-status" class="model-preview-status">Upload a supported 3D model to preview it here.</div>
+      </div>
+      <p class="model-preview-help">Drag to rotate · Scroll to zoom · Right-click to pan</p>
+    </div>
+  </div>
 </div>
 
 <aside class="quote-side">
@@ -95,5 +110,6 @@
 <script src="js/location.js" defer></script>
 <script src="js/cc-calculator.js" defer></script>
 <script src="js/quote.js" defer></script>
+<script src="js/model-preview.js" defer></script>
 </body>
 </html>
