@@ -1,3 +1,4 @@
+(function(){
 let previewThreePromise = null;
 let viewer = null;
 
@@ -233,18 +234,7 @@ async function loadModel(file) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const input = document.querySelector("#cc-file");
-  const preview = document.querySelector("#model-preview");
 
-  input?.addEventListener("change", () => {
-    const file = input.files?.[0];
-    if (!file) {
-      preview?.classList.remove("visible");
-      return;
-    }
-    preview?.classList.add("visible");
-    previewStatus("Loading 3D preview…");
-    loadModel(file);
-  });
-});
+
+window.CosmicPreview={loadModel};
+})();
