@@ -25,19 +25,47 @@ function triVolume(pos,indices,unitFactor){
   return Math.abs(v)*unitFactor;
 }
 function parseSTL(buf){
-  if(!(buf instanceof ArrayBuffer))buf=buf?.buffer instanceof ArrayBuffer?buf.buffer:buf;
-  if(!(buf instanceof ArrayBuffer))throw Error("The selected file could not be read as binary data.");
-  const bytes=new Uint8Array(buf);
-  if (bytes.byteLength < 84) throw Error("The STL file is too small or invalid.");
-  const d=new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength),count=d.getUint32(80,true);
-  if(count&&84+count*50===d.byteLength){
-    const tris=[];let o=84;
-    for(let i=0;i<count;i++){o+=12;const t=[];for(let j=0;j<3;j++){t.push([d.getFloat32(o,true),d.getFloat32(o+4,true),d.getFloat32(o+8,true)]);o+=12}o+=2;tris.push(t)}
+  const bytes = new Uint8Array(buf);
+  if(bytes.length < 84) throw Error("The STL file is too small or invalid.");
+
+  // Read IEEE-754 little-endian float without DataView.
+  function float32LE(i){
+    const b0=bytes[i],b1=bytes[i+1],b2=bytes[i+2],b3=bytes[i+3];
+    const sign=(b3&128)?-1:1, exp=((b3&127)<<1)|(b2>>7), mant=((b2&127)<<16)|(b1<<8)|b0;
+    if(exp===255) return mant ? NaN : sign*Infinity;
+    if(exp===0) return sign*Math.pow(2,-126)*(mant/0x800000);
+    return sign*Math.pow(2,exp-127)*(1+mant/0x800000);
+  }
+  function uint32LE(i){
+    return (bytes[i] | (bytes[i+1]<<8) | (bytes[i+2]<<16) | (bytes[i+3]<<24)) >>> 0;
+  }
+
+  const count=uint32LE(80);
+  const binarySize=84+count*50;
+  const isBinary=count>0 && binarySize<=bytes.length;
+
+  if(isBinary){
+    const tris=[]; let o=84;
+    for(let i=0;i<count;i++){
+      o+=12;
+      const t=[];
+      for(let j=0;j<3;j++){
+        const x=float32LE(o),y=float32LE(o+4),z=float32LE(o+8);
+        if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z)) throw Error("The STL contains invalid coordinate data.");
+        t.push([x,y,z]); o+=12;
+      }
+      o+=2; tris.push(t);
+    }
     return meshVolumeCC(tris);
   }
-  const nums=[...new TextDecoder().decode(buf).matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/gi)].map(m=>m.slice(1).map(Number)),tris=[];
-  for(let i=0;i+2<nums.length;i+=3)tris.push([nums[i],nums[i+1],nums[i+2]]);
-  if(!tris.length)throw Error("No STL triangles found");return meshVolumeCC(tris);
+
+  // ASCII STL fallback.
+  const text=new TextDecoder().decode(bytes);
+  const nums=[...text.matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/gi)].map(m=>m.slice(1).map(Number));
+  const tris=[];
+  for(let i=0;i+2<nums.length;i+=3) tris.push([nums[i],nums[i+1],nums[i+2]]);
+  if(!tris.length) throw Error("No STL triangles found.");
+  return meshVolumeCC(tris);
 }
 function parseOBJ(text){
   const v=[],tris=[];
