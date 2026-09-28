@@ -220,7 +220,7 @@ async function loadModel(file) {
     let geometry;
 
     if (ext === "stl") {
-      geometry = parseSTL(THREE, await file.arrayBuffer());
+      geometry = parseSTL(THREE, await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = () => reject(new Error("Could not read the selected model file.")); r.readAsArrayBuffer(file); }));
     } else if (ext === "obj") {
       geometry = parseOBJ(THREE, await file.text());
     } else {
