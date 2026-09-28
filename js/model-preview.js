@@ -136,9 +136,10 @@ async function parseFile(file){
     const Loader=await loaderFor(ext);if(!Loader)throw Error("This file format is not supported by the browser preview engine.");
     const loader=new Loader();
     const ab=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
-    if(ext==="stl")object=loader.parse(ab);
+    if(ext==="stl"){const g=loader.parse(ab);object=new THREE.Mesh(g,material(THREE));}
     else if(ext==="obj")object=loader.parse(new TextDecoder().decode(bytes));
-    else if(ext==="3mf"||ext==="ply"||ext==="fbx"||ext==="3ds"||ext==="amf")object=loader.parse(ab, "");
+    else if(ext==="3mf"||ext==="fbx"||ext==="3ds"||ext==="amf")object=loader.parse(ab, "");
+    else if(ext==="ply"){const g=loader.parse(ab);object=new THREE.Mesh(g,material(THREE));}
     else if(ext==="glb"||ext==="gltf"){
       object=await new Promise((resolve,reject)=>loader.parse(ab,"",g=>resolve(g.scene||g.scenes?.[0]),reject));
       factor=1e6;
