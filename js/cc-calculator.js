@@ -27,7 +27,9 @@ function triVolume(pos,indices,unitFactor){
 function parseSTL(buf){
   if(!(buf instanceof ArrayBuffer))buf=buf?.buffer instanceof ArrayBuffer?buf.buffer:buf;
   if(!(buf instanceof ArrayBuffer))throw Error("The selected file could not be read as binary data.");
-  const d=new DataView(buf),count=d.byteLength>=84?d.getUint32(80,true):0;
+  const bytes=new Uint8Array(buf);
+  if (bytes.byteLength < 84) throw Error("The STL file is too small or invalid.");
+  const d=new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength),count=d.getUint32(80,true);
   if(count&&84+count*50===d.byteLength){
     const tris=[];let o=84;
     for(let i=0;i<count;i++){o+=12;const t=[];for(let j=0;j<3;j++){t.push([d.getFloat32(o,true),d.getFloat32(o+4,true),d.getFloat32(o+8,true)]);o+=12}o+=2;tris.push(t)}
@@ -94,13 +96,12 @@ async function parse3MF(buf){
   for(const mesh of [...doc.getElementsByTagName("mesh")]){const vs=[...mesh.getElementsByTagName("vertex")].map(x=>[+x.getAttribute("x"),+x.getAttribute("y"),+x.getAttribute("z")]);for(const t of [...mesh.getElementsByTagName("triangle")])tris.push([vs[+t.getAttribute("v1")],vs[+t.getAttribute("v2")],vs[+t.getAttribute("v3")]])}
   if(!tris.length)throw Error("No 3MF triangles found");return meshVolumeCC(tris);
 }
-function readFileAsArrayBuffer(file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=()=>resolve(reader.result);
-    reader.onerror=()=>reject(new Error("Could not read the selected file."));
-    reader.readAsArrayBuffer(file);
-  });
+async function readFileAsArrayBuffer(file){
+  const buffer = await new Response(file).arrayBuffer();
+  if (!(buffer instanceof ArrayBuffer) || buffer.byteLength === 0) {
+    throw new Error("The selected file is empty or could not be read.");
+  }
+  return buffer;
 }
 async function calculateModelVolume(file){
   const buf=await readFileAsArrayBuffer(file),ext=file.name.toLowerCase().split(".").pop();
