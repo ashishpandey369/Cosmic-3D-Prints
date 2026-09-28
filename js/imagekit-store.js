@@ -1,11 +1,11 @@
 import { auth } from "./firebase-auth.js";
 
-export const IMAGEKIT_URL_ENDPOINT = "https://ik.imagekit.io/giftyhamper";
-export const IMAGEKIT_PUBLIC_KEY = "public_Rt1oqiUStVe495Q5BXhyFI19G+c=";
+export const IMAGEKIT_URL_ENDPOINT = "https://ik.imagekit.io/cosmic3d";
+export const IMAGEKIT_PUBLIC_KEY = "public_Fzs4VZA4lK9D9u5TOUW7p/889Ww=";
 
 // Cloudflare Worker keeps the ImageKit private key off the frontend.
 // This Worker is deployed from the same GitHub repository.
-export const IMAGEKIT_WORKER_URL = "https://gifty-hamper.arindia-in.workers.dev";
+export const IMAGEKIT_WORKER_URL = "https://cosmic-3d-prints.arindia-in.workers.dev";
 
 function safeFileName(value = "image.webp") {
   const cleaned = String(value)
@@ -61,7 +61,7 @@ export async function uploadImageFile(file, { folder, fileName } = {}) {
 
   form.append("file", file);
   form.append("fileName", safeFileName(fileName || "image.webp"));
-  form.append("folder", folder || "/gifty-hamper/other");
+  form.append("folder", folder || "/cosmic/other");
   form.append("useUniqueFileName", "true");
   form.append("publicKey", uploadAuth.publicKey || IMAGEKIT_PUBLIC_KEY);
   form.append("token", uploadAuth.token);
