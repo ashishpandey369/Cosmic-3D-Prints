@@ -1,0 +1,440 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return signedIn()
+        && request.auth.token.role == 'super_admin';
+    }
+
+    function currentUser() {
+      return get(
+        /databases/$(database)/documents/users/$(request.auth.uid)
+      );
+    }
+
+    function isOwner() {
+      return signedIn()
+        && currentUser().data.get('role', '') == 'owner'
+        && currentUser().data.get('active', false) == true
+        && (
+          currentUser().data.get('expiresAt', null) == null
+          || currentUser().data.get('expiresAt', request.time) > request.time
+        );
+    }
+
+    function ownerForCurrentAdmin() {
+      return get(
+        /databases/$(database)/documents/users/$(currentUser().data.get('ownerUid', ''))
+      );
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && currentUser().data.get('role', '') == 'admin'
+        && currentUser().data.get('active', false) == true
+        && (
+          currentUser().data.get('expiresAt', null) == null
+          || currentUser().data.get('expiresAt', request.time) > request.time
+        )
+        && currentUser().data.get('ownerUid', '') != ''
+        && ownerForCurrentAdmin().data.get('role', '') == 'owner'
+        && ownerForCurrentAdmin().data.get('active', false) == true
+        && (
+          ownerForCurrentAdmin().data.get('expiresAt', null) == null
+          || ownerForCurrentAdmin().data.get('expiresAt', request.time) > request.time
+        );
+    }
+
+    function isStaff() {
+      return isSuperAdmin() || isOwner() || isAdmin();
+    }
+
+    // Super Admin is the only role that can change feature switches.
+    // Missing switches remain enabled for backward compatibility with
+    // existing accounts created before feature controls were added.
+    function featureEnabled(feature) {
+      return isSuperAdmin()
+        || (
+          signedIn()
+          && currentUser().data.get('features', {}).get(feature, true) == true
+        );
+    }
+
+    function validFeatures(data) {
+      return data.get('features', {}).get('catalog', true) is bool
+        && data.get('features', {}).get('sales', true) is bool
+        && data.get('features', {}).get('staff', false) is bool;
+    }
+
+    // Owner-created Admins are always exactly 60 days.
+    // The server-side request time is used so the client cannot choose
+    // a different validity period or expiry timestamp.
+    function validOwnerAdminValidity(data) {
+      return data.get('validityDays', 0) == 60
+        && data.get('expiresAt', null) is timestamp
+        && data.get('expiresAt', null) > request.time + duration.value(59, 'd')
+        && data.get('expiresAt', null) <= request.time + duration.value(61, 'd');
+    }
+
+    function validSku(sku) {
+      return sku is string
+        && sku.matches('^[A-Z]{2}[0-9]{4}$');
+    }
+
+    function validSalePrice(data) {
+      return data.get('salePrice', '') == ''
+        || (
+          data.get('salePrice', 0) is number
+          && data.get('salePrice', 0) >= 0
+          && data.get('salePrice', 0) < data.get('price', 0)
+        );
+    }
+
+    match /users/{userId} {
+      // A user can read only their own profile. Super Admin can read the
+      // complete staff directory. Owners can read their own Admin profiles.
+      allow get: if isSuperAdmin()
+        || (signedIn() && request.auth.uid == userId)
+        || (
+          signedIn()
+          && currentUser().data.get('role', '') == 'admin'
+          && currentUser().data.get('ownerUid', '') == userId
+        );
+
+      allow list: if isSuperAdmin();
+
+      // Super Admin creates Owners. Super Admin-created Admins must have an
+      // Owner UID so that Admin login/access has an unambiguous Owner.
+      allow create: if isSuperAdmin()
+        && request.resource.data.role == 'owner'
+        && request.resource.data.active == true
+        && request.resource.data.features is map
+        && validFeatures(request.resource.data);
+
+      allow create: if isSuperAdmin()
+        && request.resource.data.role == 'admin'
+        && request.resource.data.active == true
+        && request.resource.data.ownerUid is string
+        && request.resource.data.ownerUid != ''
+        && get(
+          /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
+        ).data.role == 'owner'
+        && get(
+          /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
+        ).data.active == true
+        && (
+          get(
+            /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
+          ).data.expiresAt == null
+          || get(
+            /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
+          ).data.expiresAt > request.time
+        )
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+        ).data.get('adminCount', 0) <= 5
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+        ).data.get('adminUids', {}).size()
+            == getAfter(
+              /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+            ).data.get('adminCount', 0)
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+        ).data.get('adminUids', {}).get(userId, false) == true
+        && request.resource.data.features is map
+        && validFeatures(request.resource.data);
+
+      // Owner can create only Admins under their own account.
+      // Owner-created Admins are always exactly 60 days.
+      allow create: if isOwner()
+        && request.auth.uid == request.resource.data.ownerUid
+        && request.resource.data.role == 'admin'
+        && request.resource.data.active == true
+        && request.resource.data.features is map
+        && validFeatures(request.resource.data)
+        && validOwnerAdminValidity(request.resource.data)
+        && (
+          !exists(
+            /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
+          )
+          || get(
+            /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
+          ).data.get('adminCount', 0) < 5
+        );
+
+      allow update: if isSuperAdmin()
+        && resource.data.role in ['owner', 'admin']
+        && request.resource.data.role in ['owner', 'admin']
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['role', 'active', 'expiresAt', 'ownerUid', 'features'])
+        && validFeatures(request.resource.data);
+
+      // Owner can only change role/status of their own Admins.
+      allow update: if isOwner()
+        && resource.data.role == 'admin'
+        && request.resource.data.role == 'admin'
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['role', 'active']);
+
+      allow delete: if isSuperAdmin()
+        && resource.data.role == 'owner';
+
+      allow delete: if isSuperAdmin()
+        && resource.data.role == 'admin';
+
+      // Owner may delete only their own Admin.
+      allow delete: if isOwner()
+        && resource.data.role == 'admin'
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    match /staffNotes/{userId} {
+      allow get, list: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // Owner-level Admin bookkeeping. This collection is not used to grant
+    // access; it mirrors the real /users Admin records for the Owner UI.
+    // Keeping these writes simple avoids rejecting a valid atomic batch because
+    // of getAfter access-call limits or legacy counter shapes.
+    match /ownerStaff/{ownerUid} {
+      allow get: if isSuperAdmin()
+        || (isOwner() && request.auth.uid == ownerUid);
+
+      allow create, update, delete: if isSuperAdmin();
+
+      // Owner can create the counter for Admin #1.
+      allow create: if isOwner()
+        && request.auth.uid == ownerUid
+        && request.resource.data.get('adminCount', -1) == 1
+        && request.resource.data.get('adminUids', {}) is map
+        && request.resource.data.adminUids.size() == 1
+        && request.resource.data.get('lastAdminOperation', {}).get('type', '') == 'add'
+        && request.resource.data.get('lastAdminOperation', {}).get('uid', '') is string;
+
+      // Owner can add an Admin, maximum 5.
+      allow update: if isOwner()
+        && request.auth.uid == ownerUid
+        && request.resource.data.get('adminCount', -1) is int
+        && request.resource.data.adminCount >= 0
+        && request.resource.data.adminCount <= 5
+        && request.resource.data.get('adminUids', {}) is map
+        && request.resource.data.adminUids.size() == request.resource.data.adminCount
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['adminCount', 'adminUids', 'lastAdminOperation'])
+        && request.resource.data.get('lastAdminOperation', {}).get('type', '') in ['add', 'remove', 'sync']
+        && request.resource.data.get('lastAdminOperation', {}).get('uid', '') is string;
+
+    }
+
+    match /ownerStaff/{ownerUid}/admins/{adminUid} {
+      allow read: if isSuperAdmin()
+        || (
+          isOwner()
+          && request.auth.uid == ownerUid
+        );
+
+      // The real Admin /users write is already protected above. This mirror
+      // must belong to the same Owner and contain the same staff identity.
+      allow create: if (
+        (
+          isOwner()
+          && request.auth.uid == ownerUid
+          && request.resource.data.role == 'admin'
+          && request.resource.data.ownerUid == ownerUid
+          && request.resource.data.active == true
+          && request.resource.data.features is map
+          && validFeatures(request.resource.data)
+          && validOwnerAdminValidity(request.resource.data)
+        )
+        || (
+          isSuperAdmin()
+          && request.resource.data.role == 'admin'
+          && request.resource.data.ownerUid == ownerUid
+          && request.resource.data.active == true
+          && request.resource.data.expiresAt is timestamp
+          && request.resource.data.validityDays is int
+          && request.resource.data.validityDays >= 1
+          && request.resource.data.validityDays <= 3650
+          && request.resource.data.features is map
+          && validFeatures(request.resource.data)
+          && (
+            !exists(/databases/$(database)/documents/users/$(ownerUid))
+            || get(/databases/$(database)/documents/users/$(ownerUid)).data.get('role', '') == 'owner'
+          )
+        )
+      );
+
+      allow update: if isSuperAdmin()
+        || (
+          isOwner()
+          && request.auth.uid == ownerUid
+          && resource.data.ownerUid == ownerUid
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['role', 'active'])
+        );
+
+      allow delete: if isSuperAdmin()
+        || (
+          isOwner()
+          && request.auth.uid == ownerUid
+          && resource.data.ownerUid == ownerUid
+        );
+    }
+
+    // ------------------------------------------------------------
+    // SKU RESERVATIONS / CATALOG
+    // ------------------------------------------------------------
+
+    match /skus/{sku} {
+      allow get, list: if isStaff() && featureEnabled('catalog');
+
+      allow create: if isStaff()
+        && featureEnabled('catalog')
+        && validSku(sku)
+        && request.resource.data.productId is string
+        && request.resource.data.productId != ''
+        && getAfter(
+          /databases/$(database)/documents/products/$(request.resource.data.productId)
+        ).data.get('sku', '') == sku;
+
+      allow update: if false;
+
+      allow delete: if isStaff()
+        && featureEnabled('catalog')
+        && validSku(sku)
+        && (
+          !exists(
+            /databases/$(database)/documents/products/$(resource.data.productId)
+          )
+          || getAfter(
+            /databases/$(database)/documents/products/$(resource.data.productId)
+          ).data.get('sku', '') == ''
+        );
+    }
+
+    match /products/{productId} {
+      // Public storefront reads active products. Staff with Catalog enabled
+      // can read the complete catalog, including inactive products.
+      allow get: if resource.data.get('active', false) == true
+        || (isStaff() && featureEnabled('catalog'));
+
+      allow list: if resource.data.get('active', false) == true
+        || (isStaff() && featureEnabled('catalog'));
+
+      allow create: if isStaff()
+        && featureEnabled('catalog')
+        && validSku(request.resource.data.get('sku', ''))
+        && request.resource.data.get('name', '') is string
+        && request.resource.data.get('name', '') != ''
+        && request.resource.data.get('price', 0) is number
+        && request.resource.data.get('price', 0) >= 0
+        && request.resource.data.get('stock', 0) is number
+        && request.resource.data.get('stock', 0) >= 0
+        && validSalePrice(request.resource.data)
+        && getAfter(
+          /databases/$(database)/documents/skus/$(request.resource.data.sku)
+        ).data.productId == productId;
+
+      allow update: if isStaff()
+        && (
+          (
+            featureEnabled('catalog')
+            && validSku(request.resource.data.get('sku', ''))
+            && request.resource.data.get('name', '') is string
+            && request.resource.data.get('name', '') != ''
+            && request.resource.data.get('price', 0) is number
+            && request.resource.data.get('price', 0) >= 0
+            && request.resource.data.get('stock', 0) is number
+            && request.resource.data.get('stock', 0) >= 0
+            && validSalePrice(request.resource.data)
+            && validSku(resource.data.get('sku', ''))
+            && request.resource.data.sku == resource.data.sku
+            && get(
+              /databases/$(database)/documents/skus/$(resource.data.sku)
+            ).data.productId == productId
+          )
+          ||
+          (
+            featureEnabled('sales')
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
+          )
+        );
+
+      allow delete: if isStaff()
+        && featureEnabled('catalog')
+        && (
+          resource.data.get('sku', '') == ''
+          || !exists(
+            /databases/$(database)/documents/skus/$(resource.data.sku)
+          )
+          || !existsAfter(
+            /databases/$(database)/documents/skus/$(resource.data.sku)
+          )
+        );
+    }
+
+    // ------------------------------------------------------------
+    // CATEGORY MANAGEMENT
+    // ------------------------------------------------------------
+
+    match /categories/{categoryId} {
+      // Category names and images are public storefront data.
+      allow get, list: if resource.data.get('active', true) == true
+        || (isStaff() && featureEnabled('catalog'));
+
+      allow create, update, delete: if isStaff() && featureEnabled('catalog');
+    }
+
+    // ------------------------------------------------------------
+    // SALES / POS
+    // ------------------------------------------------------------
+
+    match /sales/{saleId} {
+      allow read: if isSuperAdmin()
+        || (isOwner() && featureEnabled('sales'))
+        || (
+          isAdmin()
+          && featureEnabled('sales')
+          && resource.data.sellerUid == request.auth.uid
+        );
+
+      allow create: if signedIn()
+        && isStaff()
+        && featureEnabled('sales')
+        && request.resource.data.sellerUid == request.auth.uid
+        && request.resource.data.sellerEmail == request.auth.token.email
+        && request.resource.data.total is number
+        && request.resource.data.total >= 0
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0;
+
+      allow update, delete: if false;
+    }
+
+    // Customer / WhatsApp orders are part of the Sales workspace.
+    match /orders/{orderId} {
+      allow read, create, update: if isStaff() && featureEnabled('sales');
+      allow delete: if false;
+    }
+
+    // Inventory history belongs to the Products & Stock workspace.
+    match /inventoryMovements/{movementId} {
+      allow read: if isStaff() && featureEnabled('catalog');
+      allow create, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

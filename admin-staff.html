@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Staff & Roles | Gifty Hamper Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-staff.css">
+</head>
+<body class="admin-body">
+  <header class="admin-topbar">
+    <div class="admin-brand">
+      <img src="assets/gifty-hampers-landscape.png" alt="Gifty Hamper">
+      <span>Admin</span>
+      <span class="admin-last-update" id="admin-last-update">Latest update: checking…</span>
+    </div>
+    <div class="admin-top-actions">
+      <a href="admin.html">Dashboard</a>
+      <a href="admin-sales.html">Sales</a>
+      <a href="index.html">View store ↗</a>
+      <span class="admin-user-email" id="admin-user-email">Checking account…</span><span class="admin-account-validity" id="admin-account-validity"></span>
+      <button id="admin-logout" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="admin-shell">
+    <section class="admin-intro">
+      <div>
+        <p class="eyebrow">Access management</p>
+        <h1>Staff <em>& roles.</em></h1>
+        <p>Manage who can operate Gifty Hamper and what level of access they have.</p>
+      </div>
+    </section>
+
+    <div id="staff-access" class="admin-notice">
+      <strong>Checking access…</strong>
+      <span>Verifying your Firebase role and staff permissions.</span>
+    </div>
+
+    <section id="staff-content" class="admin-panel staff-panel" hidden>
+      <div class="admin-panel-head">
+        <div>
+          <p class="eyebrow">Team</p>
+          <h2>Application users</h2>
+        </div>
+        <div class="staff-head-actions">
+          <button id="add-owner" type="button" class="admin-primary" hidden>+ Add Owner</button>
+          <button id="add-admin" type="button" class="admin-primary" hidden>+ Add Admin</button>
+          <button id="staff-refresh" type="button" class="admin-secondary">Refresh</button>
+        </div>
+      </div>
+
+      <div class="staff-role-guide">
+        <article><strong>Super Admin</strong><span>Full system access and can manage Owners and Admins.</span></article>
+        <article><strong>Owner</strong><span>Operational access and can manage Admins, but cannot create another Owner.</span></article>
+        <article><strong>Admin</strong><span>Sales, products and stock access. No staff management.</span></article>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table staff-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Validity</th>
+              <th>User ID</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="staff-list"></tbody>
+        </table>
+      </div>
+    </section>
+    <div id="staff-detail-modal" class="staff-modal" hidden>
+      <div class="staff-modal-backdrop" data-close-detail-modal></div>
+      <section class="staff-modal-card staff-detail-card" role="dialog" aria-modal="true" aria-labelledby="staff-detail-title">
+        <button class="staff-modal-close" type="button" data-close-detail-modal aria-label="Close">×</button>
+        <p class="eyebrow">Member details</p>
+        <h2 id="staff-detail-title">Member</h2>
+        <div id="staff-detail-meta" class="staff-detail-meta"></div>
+
+        <div id="staff-feature-section" class="staff-feature-section" hidden>
+          <p class="eyebrow">Feature access</p>
+          <h3>Visible admin features</h3>
+          <p class="admin-help">Only the Super Admin can change these switches. Turning a feature off hides it and blocks direct access for that member.</p>
+          <div class="staff-feature-grid">
+            <label><input type="checkbox" data-feature-toggle="catalog"> Products & stock</label>
+            <label><input type="checkbox" data-feature-toggle="sales"> Sales</label>
+            <label><input type="checkbox" data-feature-toggle="staff"> Staff & roles</label>
+          </div>
+        </div>
+
+        <div class="staff-notes-section">
+          <p class="eyebrow">Private notes</p>
+          <textarea id="staff-member-notes" rows="6" placeholder="Keep notes about this member…"></textarea>
+          <p id="staff-detail-status" class="admin-help staff-modal-status"></p>
+        </div>
+
+        <div id="staff-password-section" class="staff-feature-section" hidden>
+          <p class="eyebrow">Password</p>
+          <h3>Account password</h3>
+          <p class="admin-help">The existing password cannot be viewed. Send a password-reset email to this member when they need a new password.</p>
+          <button id="reset-staff-password" type="button" class="admin-secondary">Send password reset email</button>
+          <p id="staff-password-status" class="admin-help staff-modal-status"></p>
+        </div>
+
+        <div class="staff-modal-actions">
+          <button type="button" class="admin-secondary" data-close-detail-modal>Close</button>
+          <button id="save-staff-details" type="button" class="admin-primary" hidden>Save details</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="staff-modal" class="staff-modal" hidden>
+      <div class="staff-modal-backdrop" data-close-staff-modal></div>
+      <section class="staff-modal-card" role="dialog" aria-modal="true" aria-labelledby="staff-modal-title">
+        <button class="staff-modal-close" type="button" data-close-staff-modal aria-label="Close">×</button>
+        <p class="eyebrow">Create staff account</p>
+        <h2 id="staff-modal-title">Add staff</h2>
+        <p id="staff-modal-description" class="admin-help">Set the email, initial password and how many days this account should remain active.</p>
+        <label class="staff-modal-label">Email address
+          <input id="new-staff-email" type="email" autocomplete="email" placeholder="staff@example.com">
+        </label>
+        <label class="staff-modal-label">Password
+          <input id="new-staff-password" type="password" autocomplete="new-password" placeholder="Minimum 6 characters">
+        </label>
+        <label class="staff-modal-label">Confirm password
+          <input id="new-staff-password-confirm" type="password" autocomplete="new-password" placeholder="Re-enter password">
+        </label>
+        <label id="new-staff-owner-field" class="staff-modal-label" hidden>Owner account
+          <select id="new-staff-owner">
+            <option value="">Choose an Owner</option>
+          </select>
+          <small class="admin-help">Every Admin must belong to an active Owner. The Admin will also appear inside that Owner's staff account.</small>
+        </label>
+        <label class="staff-modal-label">Account validity (days)
+          <input id="new-staff-validity" type="number" min="1" max="3650" step="1" value="60">
+          <small class="admin-help">After this period, the account will be treated as expired and access will be blocked.</small>
+        </label>
+        <div class="staff-modal-role">
+          <span>Role</span>
+          <strong id="new-staff-role">Admin</strong>
+        </div>
+        <div class="staff-modal-actions">
+          <button type="button" class="admin-secondary" data-close-staff-modal>Cancel</button>
+          <button id="create-staff-account" type="button" class="admin-primary">Create account</button>
+        </div>
+        <p id="staff-modal-status" class="admin-help staff-modal-status"></p>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="js/admin-feature-guard.js?v=2"></script>
+  <script type="module" src="js/admin-staff.js?v=18"></script>
+</body>
+</html>

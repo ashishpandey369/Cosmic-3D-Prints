@@ -1,0 +1,8 @@
+name = "gifty-hamper"
+main = "cloudflare-worker/src/index.js"
+compatibility_date = "2026-09-20"
+
+[vars]
+FIREBASE_PROJECT_ID = "gifty-hamper"
+IMAGEKIT_PUBLIC_KEY = "public_Rt1oqiUStVe495Q5BXhyFI19G+c="
+ALLOWED_ORIGIN = "https://ashishpandey369.github.io"

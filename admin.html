@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Admin Dashboard | Gifty Hamper</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+  <header class="admin-topbar">
+    <div class="admin-brand">
+      <img src="assets/gifty-hampers-landscape.png" alt="Gifty Hamper">
+      <span>Admin</span>
+    </div>
+    <div class="admin-top-actions">
+      <a href="admin-staff.html">Staff & roles</a><a href="admin-sales.html">Sales</a><a href="index.html">View store ↗</a>
+      <span class="admin-user-email" id="admin-user-email">Checking account…</span><span class="admin-account-validity" id="admin-account-validity"></span>
+      <button id="admin-refresh" type="button">Refresh</button>
+      <button id="admin-logout" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="admin-shell">
+    <section class="admin-intro">
+      <div>
+        <p class="eyebrow">Store management</p>
+        <h1>Product <em>dashboard.</em></h1>
+        <p>Add products, organise categories, set prices and manage stock from one place.</p>
+      </div>
+      <button class="admin-primary" id="new-product" type="button">+ Add product</button>
+    </section>
+
+    <div class="admin-notice">
+      <strong>Shared catalog</strong>
+      <span>Products, prices, images and stock are now stored in the shared Firebase catalog so authorized staff see the same inventory.</span>
+    </div>
+
+    <section class="admin-stats" aria-label="Catalog overview">
+      <article><span>Total products</span><strong id="stat-products">0</strong></article>
+      <article><span>Active products</span><strong id="stat-active">0</strong></article>
+      <article><span>Low stock</span><strong id="stat-low">0</strong></article>
+      <article><span>Out of stock</span><strong id="stat-out">0</strong></article>
+    </section>
+
+    <section class="admin-grid">
+      <div class="admin-panel">
+        <div class="admin-panel-head">
+          <div><p class="eyebrow">Catalog</p><h2>Products</h2></div>
+          <div class="admin-tools">
+            <input id="admin-search" type="search" placeholder="Search SKU, name or multiple SKUs (comma separated)">
+            <select id="admin-status">
+              <option value="all">All status</option>
+              <option value="active">Active</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
+            <tbody id="admin-product-list"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside class="admin-panel admin-editor" id="product-editor">
+        <div class="admin-panel-head">
+          <div><p class="eyebrow">Product editor</p><h2 id="editor-title">Add product</h2></div>
+          <button class="admin-close" id="cancel-edit" type="button" aria-label="Close editor">×</button>
+        </div>
+        <form id="product-form">
+          <input type="hidden" id="edit-id">
+          <div class="admin-form-grid">
+            <label class="wide">Product name<input id="product-name" required placeholder="Example: Premium Diwali Hamper"></label>
+            <input type="hidden" id="product-id"><label>SKU<input id="product-sku" readonly placeholder="Auto generated"><small class="admin-help">Automatically generated: 2 letters + 4 digits. SKU is unique and cannot be changed.</small></label>
+            <label>Price (₹)<input id="product-price" type="number" min="0" step="1" required><small id="product-price-range" class="admin-help">Automatic price category: —</small></label>
+            <label>Sale price (₹)<input id="product-sale-price" type="number" min="0" step="1" placeholder="Optional"></label>
+            <label>Stock quantity<input id="product-stock" type="number" min="0" step="1" required value="0"></label>
+            <label>Low-stock alert<input id="product-low-stock" type="number" min="0" step="1" value="5"></label>
+            <label class="wide">Major category<select id="product-major-category" required></select></label><div class="wide admin-field"><span class="admin-field-label">Minor categories</span><div id="product-categories" class="category-checks"></div><p class="admin-help">Select one or more minor categories. A product can appear under multiple categories.</p></div>
+            <label>Occasion<select id="product-occasion" required></select></label>
+            <label class="wide">Description<textarea id="product-description" rows="3" placeholder="Short product description"></textarea></label>
+            <label>Label<input id="product-label" placeholder="Premium"></label>
+            <div class="wide admin-field"><span class="admin-field-label">Product images</span><p class="admin-help">Add multiple images using direct PNG/JPG/WebP links, or select image files from your computer. The first image is the main product image.</p><div class="image-input-row"><input id="product-image-url" placeholder="https://example.com/product.jpg"><button id="add-image-url" type="button" class="admin-secondary">+ Add image URL</button></div><label class="upload-box"><input id="product-image-files" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" multiple><span>Choose PNG / JPG / WebP images</span><small>Multiple images supported</small></label><div id="product-images-preview" class="image-preview-grid"></div></div>
+            <label class="wide checkbox-row"><input id="product-featured" type="checkbox"> Featured product</label>
+            <label class="wide checkbox-row"><input id="product-active" type="checkbox" checked> Visible in store</label>
+          </div>
+          <div class="admin-form-actions">
+            <button class="admin-secondary" id="reset-form" type="button">Reset</button>
+            <button class="admin-primary" type="submit">Save product</button>
+          </div>
+        </form>
+      </aside>
+    </section>
+
+        <section class="admin-panel most-sold-manager">
+      <div>
+        <p class="eyebrow">Homepage showcase</p>
+        <h2>Most Sold Products</h2>
+        <p>Select any number of products for the homepage slideshow. The product's existing main image is used, so no extra image upload is needed.</p>
+      </div>
+      <div class="most-sold-manager-controls">
+        <div class="most-sold-columns">
+          <div class="most-sold-picker">
+            <div class="most-sold-column-head">
+              <strong>All products</strong>
+              <span>Search and tick products</span>
+            </div>
+            <input id="most-sold-search" class="most-sold-search" type="search" placeholder="Search product, SKU or category">
+            <div id="most-sold-product-list" class="most-sold-product-list"></div>
+          </div>
+          <div class="most-sold-selected">
+            <div class="most-sold-column-head">
+              <strong>Selected Most Sold</strong>
+              <span id="most-sold-count">0 selected</span>
+            </div>
+            <div id="most-sold-selected-list" class="most-sold-selected-list"></div>
+          </div>
+        </div>
+        <div class="most-sold-save-row">
+          <button class="admin-primary" id="save-most-sold" type="button">Save Most Sold products</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-panel category-manager">
+      <div><p class="eyebrow">Store taxonomy</p><h2>Major categories</h2><p>Create or remove the top-level categories used to organise your store.</p></div>
+      <div class="category-manager-controls">
+        <div class="inline-add"><input id="new-major-category" placeholder="New major category name"><button id="create-major-category" type="button" class="admin-primary">Create major category</button></div>
+        <div id="major-category-list" class="category-list"></div>
+      </div>
+    </section>
+
+    <section class="admin-panel category-manager">
+      <div><p class="eyebrow">Store taxonomy</p><h2>Minor categories</h2><p>Create or remove the detailed categories. Products can belong to multiple minor categories.</p></div>
+      <div class="category-manager-controls">
+        <div class="inline-add"><input id="new-category" placeholder="New minor category name"><button id="create-category" type="button" class="admin-primary">Create minor category</button></div>
+        <div id="category-list" class="category-list"></div>
+      </div>
+    </section>
+
+
+    <div class="category-editor-modal" id="category-editor-modal" hidden aria-hidden="true">
+      <div class="category-editor-backdrop" data-close-category-editor></div>
+      <section class="category-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="category-editor-title">
+        <div class="admin-panel-head">
+          <div><p class="eyebrow">Category editor</p><h2 id="category-editor-title">Edit category</h2></div>
+          <button class="admin-close" id="close-category-editor" type="button" aria-label="Close category editor">×</button>
+        </div>
+        <form id="category-editor-form">
+          <input type="hidden" id="category-editor-id">
+          <input type="hidden" id="category-editor-type">
+          <div class="category-editor-body">
+            <label>Category name<input id="category-editor-name" required></label>
+            <div class="admin-field">
+              <span class="admin-field-label">Category image</span>
+              <p class="admin-help">Upload a PNG/JPG/WebP image or paste a direct image URL. A square image works best.</p>
+              <div class="image-input-row">
+                <input id="category-editor-image-url" type="url" placeholder="https://example.com/category.jpg">
+                <button id="category-editor-add-url" type="button" class="admin-secondary">Use image URL</button>
+              </div>
+              <label class="upload-box">
+                <input id="category-editor-image-file" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+                <span>Choose category image</span>
+                <small>One image per category</small>
+              </label>
+              <div id="category-editor-preview" class="category-editor-preview"></div>
+              <button id="category-editor-remove-image" type="button" class="admin-secondary danger category-editor-remove">Remove image</button>
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button class="admin-secondary" id="cancel-category-editor" type="button">Cancel</button>
+            <button class="admin-primary" id="save-category-editor" type="submit">Save category</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <section class="admin-panel admin-catalog-tools">
+      <div>
+        <p class="eyebrow">Catalog data</p>
+        <h2>Backup & tools</h2>
+        <p>Export your current catalog before making major changes.</p>
+      </div>
+      <div class="admin-tools-actions">
+        <button class="admin-secondary" id="export-catalog" type="button">Export catalog JSON</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/admin-feature-guard.js?v=3"></script>
+  <script type="module" src="js/admin-guard.js?v=6"></script>
+  <script type="module" src="js/admin.js?v=22"></script>
+</body>
+</html>

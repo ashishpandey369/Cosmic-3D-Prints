@@ -1,0 +1,34 @@
+name: Update latest timestamp
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - latest-update.txt
+
+permissions:
+  contents: write
+
+jobs:
+  update-timestamp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write IST timestamp
+        run: |
+          TZ=Asia/Kolkata date '+%d-%m-%Y %H:%M:%S IST' > latest-update.txt
+
+      - name: Commit timestamp
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add latest-update.txt
+          if git diff --cached --quiet; then
+            echo "Timestamp unchanged."
+          else
+            git commit -m "Update latest project timestamp"
+            git push
+          fi

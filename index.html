@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Gifty Hamper — thoughtfully curated gifts for celebrations, teams, clients and every special moment.">
+  <title>Gifty Hamper | Thoughtful gifts, beautifully curated</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/home-marketplace.css">
+</head>
+<body class="marketplace-body">
+  <div class="announcement-bar"><div class="container announcement-inner"><a href="tel:+919448588793" aria-label="Call Gifty Hamper">☎ <span>+91 94485 88793</span></a><a href="mailto:Info@giftyhamper.com">Mail us : Info@giftyhamper.com</a><span>Address : 49/1/19, 4th Cross Magadi main road, Bengaluru, Karnataka, 560091</span></div></div>
+  <header class="site-header marketplace-header">
+    <div class="container header-inner marketplace-header-inner">
+      <a class="brand marketplace-brand" href="index.html" aria-label="Gifty Hamper home"><img src="assets/gifty-hampers-landscape.png" alt="Gifty Hamper" class="brand-logo"></a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span><span></span></button>
+      <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
+        <a href="index.html">Home</a><a href="shop.html">Shop</a><a href="index.html#occasions">Occasions</a><a href="index.html#corporate">Corporate</a><a href="about.html">Our story</a><a href="contact.html">Contact</a><a href="login.html">Account / Login</a>
+      </nav>
+      <form class="marketplace-header-search" id="header-search" role="search">
+        <span aria-hidden="true">⌕</span>
+        <input id="header-search-input" type="search" placeholder="Search for gifts, hampers or SKU" aria-label="Search products">
+        <button type="submit" aria-label="Search">Search</button>
+      </form>
+      <div class="header-actions marketplace-header-actions">
+        <button class="location-button" type="button" aria-label="Set delivery location"><span>⌖</span><span>Deliver to</span><small data-location-label>Set location</small></button>
+        <a class="icon-button marketplace-cart-button" href="cart.html" aria-label="Shopping cart">🛒<span id="cart-count" class="cart-count">0</span></a>
+      </div>
+    </div>
+  </header>
+  
+  <main class="marketplace-home">
+    <section class="marketplace-search-section">
+      <div class="container">
+        <form class="marketplace-search" id="home-search" role="search">
+          <span class="marketplace-search-icon" aria-hidden="true">⌕</span>
+          <input id="home-search-input" type="search" placeholder="Search for gifts, hampers, occasions or SKU" autocomplete="off" aria-label="Search products">
+          <button type="submit">Search</button>
+        </form>
+      </div>
+    </section>
+
+
+    <section class="marketplace-categories" aria-label="Shop by category">
+      <div class="container">
+        <div class="marketplace-section-head">
+          <div><p class="eyebrow">Explore</p><h2>Shop by category</h2></div>
+          <a href="categories.html">View all categories <span>→</span></a>
+        </div>
+        <div class="category-scroller" id="home-categories"></div>
+      </div>
+    </section>
+
+    <section class="marketplace-hero">
+      <div class="container">
+        <div class="marketplace-hero-card">
+          <div class="marketplace-hero-copy">
+            <p class="eyebrow">Gifty Hamper</p>
+            <h1>Find a gift<br><em>worth remembering.</em></h1>
+            <p>Thoughtfully curated hampers for birthdays, celebrations, teams, clients and every special moment.</p>
+            <a class="marketplace-hero-button" href="shop.html">Shop gifts <b>→</b></a>
+          </div>
+          <div class="marketplace-hero-art">
+            <div class="hero-art-card hero-art-card-one"><span>✦</span><strong>Curated<br>with care</strong></div>
+            <div class="hero-art-card hero-art-card-two"><small>READY TO</small><b>GIFT</b></div>
+            <div class="most-sold-slideshow" id="most-sold-slideshow" aria-label="Most sold categories slideshow"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="marketplace-quick-links">
+      <div class="container quick-link-grid">
+        <a href="shop.html?occasion=Birthday"><span>🎂</span><strong>Birthday</strong><small>Make their day</small></a>
+        <a href="shop.html?occasion=Corporate"><span>💼</span><strong>Corporate</strong><small>For teams & clients</small></a>
+        <a href="shop.html?occasion=Festive"><span>✨</span><strong>Festive</strong><small>Celebrate together</small></a>
+        <a href="shop.html?category=Appreciation%20Gifts"><span>💝</span><strong>Thank you</strong><small>Show appreciation</small></a>
+      </div>
+    </section>
+
+    <section class="marketplace-recent-section" id="recently-viewed">
+      <div class="container">
+        <div class="marketplace-section-head marketplace-recent-head">
+          <div><p class="eyebrow">Your activity</p><h2>Recently Viewed</h2></div>
+          <div class="marketplace-scroll-actions">
+            <button type="button" class="marketplace-scroll-btn" id="recent-scroll-left" aria-label="Scroll recently viewed left">‹</button>
+            <button type="button" class="marketplace-scroll-btn" id="recent-scroll-right" aria-label="Scroll recently viewed right">›</button>
+          </div>
+        </div>
+        <div class="marketplace-recent-row" id="home-recent-products"></div>
+      </div>
+    </section>
+
+    <section class="marketplace-products-section" id="for-you">
+      <div class="container">
+        <div class="marketplace-section-head">
+          <div><p class="eyebrow">Picked for you</p><h2>For You</h2></div>
+          <a href="shop.html">View More <span>→</span></a>
+        </div>
+        <div class="marketplace-product-grid" id="home-products"></div>
+        <div class="marketplace-view-more"><a class="marketplace-view-more-button" href="shop.html">View More Gifts <span>→</span></a></div>
+      </div>
+    </section>
+
+    <section class="marketplace-occasions">
+      <div class="container">
+        <div class="marketplace-section-head">
+          <div><p class="eyebrow">Choose a moment</p><h2>Gifts for every occasion</h2></div>
+        </div>
+        <div class="occasion-market-grid">
+          <a href="shop.html?occasion=Birthday"><img src="assets/birthday.jpg" alt="Birthday gifts" loading="lazy"><span>Birthday</span></a>
+          <a href="shop.html?occasion=Anniversary"><img src="assets/anniversary.jpg" alt="Anniversary gifts" loading="lazy"><span>Anniversary</span></a>
+          <a href="shop.html?occasion=Rakhi"><img src="assets/rakhi.jpg" alt="Rakhi gifts" loading="lazy"><span>Rakhi</span></a>
+          <a href="shop.html?occasion=Corporate"><img src="assets/corporate.jpg" alt="Corporate gifts" loading="lazy"><span>Corporate</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="marketplace-trust">
+      <div class="container">
+        <div class="trust-row">
+          <div><span>✓</span><div><strong>Curated products</strong><small>Thoughtful gifts selected for you</small></div></div>
+          <div><span>✓</span><div><strong>Multiple images</strong><small>See products clearly before ordering</small></div></div>
+          <div><span>✓</span><div><strong>Gifting support</strong><small>For personal and corporate orders</small></div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+    <section class="google-reviews-hero" id="reviews">
+      <div class="container">
+        <div class="google-reviews-card">
+          <div class="google-reviews-brand">
+            <div class="google-g-mark">G</div>
+            <div>
+              <p class="eyebrow">Customers love us on</p>
+              <h2>Google Reviews</h2>
+              <div class="google-stars" aria-label="Google reviews">★★★★★</div>
+              <p class="google-review-note">Read the latest customer feedback on Google Maps</p>
+            </div>
+          </div>
+          <div class="google-review-message">
+            <span class="google-quote">“</span>
+            <strong>Beautiful hampers and<br>on-time delivery!</strong>
+            <span>Real customer feedback on Google</span>
+          </div>
+          <div class="google-review-action">
+            <a class="button button-primary" href="https://www.google.com/maps/place/Giftyhamper/@12.9819833,77.4546667,15z/data=!4m8!3m7!1s0x3bae3b6b58061f05:0x5b20b74fd6782c9e!8m2!3d12.9819626!4d77.464945!9m1!1b1!16s%2Fg%2F11ms6p64by?entry=ttu" target="_blank" rel="noopener">Read Google Reviews <span>→</span></a>
+            <small>See what our customers say on Google Maps</small>
+          </div>
+        </div>
+      </div>
+    </section>
+  <footer class="site-footer"><div class="container footer-grid"><div class="footer-brand"><a class="brand" href="index.html"><img src="assets/gifty-hampers-landscape.png" alt="Gifty Hamper" class="brand-logo"></a><span class="footer-follow">follow us:</span><div class="footer-socials" aria-label="Social media"><a class="footer-social" href="#" aria-label="Facebook">f</a><a class="footer-social" href="#" aria-label="X">𝕏</a><a class="footer-social" href="#" aria-label="Pinterest">p</a><a class="footer-social" href="#" aria-label="LinkedIn">in</a></div></div><div><h3>Categories</h3><a href="shop.html">Appreciation Gifts</a><a href="shop.html">Celebration Gifts</a><a href="shop.html">Eco Friendly Gifts</a><a href="shop.html">Employee Gifts</a><a href="shop.html">Festive Gifts</a><a href="shop.html">Gadgets and Electronic Gifts</a><a href="shop.html">Gift Sets</a><a href="shop.html">MR Gifts</a><a href="shop.html">Office Accessories</a><a href="shop.html">Premium Gifts</a></div><div><h3>Useful links</h3><a href="index.html">Home</a><a href="about.html">About Us</a><a href="contact.html">Contact Us</a></div><div><h3>Contact Us</h3><div class="footer-contact-details"><p>49/1/19, 4th Cross Magadi main road,<br>Bengaluru, Karnataka, 560091</p><p><a href="tel:+919448588793">+91 94485 88793</a></p><p><a href="mailto:Info@giftyhamper.com">Info@giftyhamper.com</a></p></div></div></div><div class="container footer-bottom"><span>Copyright © <span data-current-year>2026</span> Gifty Hampers. All rights reserved.</span><div class="payment-badges" aria-label="Accepted payment methods"><span class="payment-badge">VISA</span><span class="payment-badge">MasterCard</span><span class="payment-badge">PayPal</span><span class="payment-badge">RuPay</span><span class="payment-badge">UPI</span></div></div></footer>
+  <script src="js/main.js" defer></script>
+  <script src="js/location.js" defer></script>
+  <script type="module" src="js/home-marketplace.js?v=5"></script>
+  <script type="module" src="js/most-sold-slideshow.js?v=4"></script>
+  <script src="js/gift-transition.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+.product-gallery{min-width:0}.product-thumbnails{display:flex;gap:10px;margin-top:12px;overflow-x:auto;padding:2px 2px 6px}.product-thumbnail{flex:0 0 78px;width:78px;height:78px;padding:0;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer;overflow:hidden;opacity:.72;transition:opacity .2s,border-color .2s,transform .2s}.product-thumbnail:hover{opacity:1}.product-thumbnail.active{opacity:1;border-color:var(--ink);transform:translateY(-1px)}.product-thumbnail img{display:block;width:100%;height:100%;object-fit:cover}.product-gallery .product-visual{width:100%}
+.product-section{padding:35px 0 100px}.breadcrumbs{display:flex;gap:9px;align-items:center;font-size:0.9522rem;color:var(--muted);margin-bottom:34px}.breadcrumbs a{color:var(--ink);font-weight:700}.product-layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:70px;align-items:center}.product-visual{height:620px;border-radius:2px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--sand);text-align:center}.product-visual.image-sage{background:var(--sage)}.product-visual.image-sand{background:var(--sand)}.product-visual.image-rose{background:var(--rose)}.product-visual.image-night{background:var(--night);color:#fff}.product-visual:after{content:"";position:absolute;width:58%;height:58%;border:1px solid rgba(38,34,30,.13);transform:rotate(8deg)}.product-visual b{font-family:'Playfair Display',Georgia,serif;font-size:clamp(3.4385rem,6.6125vw,7.2737rem);line-height:.82;letter-spacing:-.06em;position:relative;z-index:1}.product-visual span{position:absolute;top:25px;left:25px;font-size:0.8464rem;text-transform:uppercase;letter-spacing:.14em;font-weight:700;z-index:2}.product-details{max-width:540px}.product-details h1{font-family:'Playfair Display',Georgia,serif;font-size:clamp(3.9675rem,6.6125vw,6.6125rem);line-height:.95;letter-spacing:-.055em;margin:7px 0 18px}.product-price{font-size:1.5209rem;font-weight:700;margin:0 0 24px}.product-description{font-size:1.2431rem;line-height:1.8;color:var(--muted);max-width:480px;margin:0}.product-divider{border-top:1px solid var(--line);margin:32px 0 23px}.quantity-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;font-size:1.0315rem;font-weight:700}.quantity-control{display:flex;align-items:center;border:1px solid var(--line);border-radius:99px;overflow:hidden}.quantity-control button{width:39px;height:39px;border:0;background:transparent;font-size:1.4547rem;cursor:pointer}.quantity-control input{width:42px;height:39px;border:0;text-align:center;font:inherit;background:transparent;outline:0;-moz-appearance:textfield}.quantity-control input::-webkit-outer-spin-button,.quantity-control input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.add-to-cart{width:100%;justify-content:space-between}.cart-feedback{min-height:20px;margin:12px 0 0;font-size:0.9919rem;color:var(--muted)}.product-notes{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);margin-top:25px;padding-top:22px;gap:18px}.product-notes div{display:flex;flex-direction:column;gap:5px}.product-notes strong{font-size:.73rem}.product-notes span{font-size:0.9257rem;color:var(--muted)}.related-section{padding:0 0 110px}.section-heading{display:flex;justify-content:space-between;align-items:end;border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:28px}.section-heading h2{font-family:'Playfair Display',Georgia,serif;font-size:clamp(3.3062rem,5.29vw,5.29rem);line-height:.95;letter-spacing:-.05em;margin:5px 0 0}.section-heading h2 em{color:var(--accent);font-weight:600}.text-link{font-size:0.9919rem;font-weight:700}.related-section .product-image{height:330px}@media(max-width:900px){.product-layout{grid-template-columns:1fr;gap:45px}.product-visual{height:min(72vw,560px)}.product-details{max-width:none}.related-section .product-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.product-section{padding:25px 0 70px}.breadcrumbs{margin-bottom:22px}.product-layout{gap:35px}.product-visual{height:105vw;max-height:480px}.product-details h1{font-size:clamp(2.8rem,14vw,4rem)}.section-heading{align-items:start;gap:20px}.related-section .product-grid{grid-template-columns:1fr}.related-section .product-image{height:360px}.product-notes{grid-template-columns:1fr}}
+
+.product-price{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.product-original-price{text-decoration:line-through;color:var(--muted);font-size:1.1902rem;font-weight:500}.product-sale-price{font-size:1.25rem}.product-discount{font-size:0.8993rem;font-weight:800;color:#d62f61;background:#ffe4ed;border-radius:999px;padding:5px 8px}.product-visual.has-product-image:after{display:none}.product-visual.has-product-image #product-label{background:rgba(255,255,255,.82);padding:6px 9px;border-radius:999px}
+
+.product-sku{font-size:0.9522rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#8c8177;margin-top:-10px}
+
+
+/* More to love: same horizontal shelf behavior as Recently Viewed */
+.related-section-heading{align-items:end}
+.related-section-actions{display:flex;align-items:center;gap:16px}
+.related-section-actions .text-link{white-space:nowrap}
+.related-products-wrap{position:relative;min-width:0}
+.related-products-row{
+  display:flex;
+  gap:17px;
+  overflow-x:auto;
+  scroll-behavior:smooth;
+  scrollbar-width:none;
+  padding:2px 2px 10px;
+  scroll-snap-type:x proximity;
+}
+.related-products-row::-webkit-scrollbar{display:none}
+.related-products-row .product-card{
+  flex:0 0 250px;
+  scroll-snap-align:start;
+}
+.related-products-row .product-image{height:300px}
+.related-products-row .product-image img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.related-scroll-btn:disabled{opacity:.35;cursor:default;background:#faf9fb}
+
+@media(max-width:900px){
+  .related-products-row .product-card{flex-basis:230px}
+  .related-products-row .product-image{height:275px}
+}
+@media(max-width:600px){
+  .related-section-heading{align-items:flex-start}
+  .related-section-actions{flex-direction:column;align-items:flex-end;gap:9px}
+  .related-section-actions .text-link{font-size:.7rem}
+  .related-products-row{gap:10px;padding-left:0;padding-right:0}
+  .related-products-row .product-card{flex-basis:180px}
+  .related-products-row .product-image{height:220px}
+  .related-products-row .product-info{padding:10px 1px}
+  .related-products-row .product-info h3{font-size:.8rem}
+  .related-products-row .product-info p{font-size:.64rem}
+  .related-products-row .product-card-price{font-size:.72rem}
+}
+
+
+/* Related-product typography: preserve the 15% scale and keep cards compact. */
+.related-products-row .product-info h3{
+  font-size:1.2167rem;
+  line-height:1.2;
+  min-height:1.2em;
+  max-height:1.2em;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.related-products-row .product-info p{
+  font-size:0.9522rem;
+  line-height:1.25;
+  min-height:2.5em;
+  max-height:2.5em;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+@media(max-width:600px){
+  .related-products-row .product-info h3{
+    font-size:.8rem;
+    line-height:1.2;
+    min-height:1.2em;
+    max-height:1.2em;
+    -webkit-line-clamp:1;
+  }
+  .related-products-row .product-info p{
+    font-size:.64rem;
+    line-height:1.25;
+    min-height:2.5em;
+    max-height:2.5em;
+    -webkit-line-clamp:2;
+  }
+}
