@@ -90,7 +90,7 @@ onAuthStateChanged(auth, async (user) => {
       setInterval(updateOwnerValidity, 60000);
     }
 
-    console.log("Gifty Hamper admin:", {
+    console.log("Cosmic 3D Prints admin:", {
       uid: user.uid,
       email: user.email,
       customClaimRole: claimRole || "none",
