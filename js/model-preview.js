@@ -64,7 +64,7 @@ function ensureViewer() {
   new ResizeObserver(resize).observe(canvas.parentElement || canvas);
   resize();
 
-  import("https://cdn.jsdelivr.net/npm/three@" + MODEL_VIEWER_VERSION + "/examples/jsm/controls/OrbitControls.js")
+  import("three/addons/controls/OrbitControls.js")
     .then(({ OrbitControls }) => {
       viewer.controls = new OrbitControls(camera, renderer.domElement);
       viewer.controls.enableDamping = true;
@@ -143,21 +143,21 @@ async function loadModel(file) {
     let object;
 
     if (ext === "stl") {
-      const { STLLoader } = await import("https://cdn.jsdelivr.net/npm/three@" + MODEL_VIEWER_VERSION + "/examples/jsm/loaders/STLLoader.js");
+      const { STLLoader } = await import("three/addons/loaders/STLLoader.js");
       const geometry = await new STLLoader().loadAsync(url);
       geometry.computeVertexNormals();
       object = new v.THREE.Mesh(geometry, makeMaterial(v.THREE));
     } else if (ext === "obj") {
-      const { OBJLoader } = await import("https://cdn.jsdelivr.net/npm/three@" + MODEL_VIEWER_VERSION + "/examples/jsm/loaders/OBJLoader.js");
+      const { OBJLoader } = await import("three/addons/loaders/OBJLoader.js");
       object = await new OBJLoader().loadAsync(url);
       object.traverse(node => {
         if (node.isMesh) node.material = makeMaterial(v.THREE);
       });
     } else if (ext === "glb" || ext === "gltf") {
-      const { GLTFLoader } = await import("https://cdn.jsdelivr.net/npm/three@" + MODEL_VIEWER_VERSION + "/examples/jsm/loaders/GLTFLoader.js");
+      const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
       object = (await new GLTFLoader().loadAsync(url)).scene;
     } else if (ext === "3mf") {
-      const { ThreeMFLoader } = await import("https://cdn.jsdelivr.net/npm/three@" + MODEL_VIEWER_VERSION + "/examples/jsm/loaders/3MFLoader.js");
+      const { ThreeMFLoader } = await import("three/addons/loaders/3MFLoader.js");
       object = await new ThreeMFLoader().loadAsync(url);
       object.traverse(node => {
         if (node.isMesh && !node.material) node.material = makeMaterial(v.THREE);
