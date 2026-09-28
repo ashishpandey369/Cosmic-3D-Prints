@@ -298,6 +298,14 @@ service cloud.firestore {
     match /skus/{sku} {
       allow get, list: if isStaff() && featureEnabled('catalog');
 
+      // Super Admin may bootstrap the empty Cosmic catalog. The product/SKU
+      // pair is created atomically by the Admin dashboard transaction.
+      allow create: if isSuperAdmin()
+        && featureEnabled('catalog')
+        && validSku(sku)
+        && request.resource.data.productId is string
+        && request.resource.data.productId != '';
+
       allow create: if isStaff()
         && featureEnabled('catalog')
         && validSku(sku)
@@ -323,6 +331,19 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
+      // Super Admin may bootstrap the empty Cosmic catalog. This deliberately
+      // avoids the SKU getAfter dependency used for normal staff writes.
+      allow create: if isSuperAdmin()
+        && featureEnabled('catalog')
+        && validSku(request.resource.data.get('sku', ''))
+        && request.resource.data.get('name', '') is string
+        && request.resource.data.get('name', '') != ''
+        && request.resource.data.get('price', 0) is number
+        && request.resource.data.get('price', 0) >= 0
+        && request.resource.data.get('stock', 0) is number
+        && request.resource.data.get('stock', 0) >= 0
+        && validSalePrice(request.resource.data);
+
       // Public storefront reads active products. Staff with Catalog enabled
       // can read the complete catalog, including inactive products.
       allow get: if resource.data.get('active', false) == true
