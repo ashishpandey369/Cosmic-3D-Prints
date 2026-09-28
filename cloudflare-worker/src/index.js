@@ -1,4 +1,4 @@
-const IMAGEKIT_UPLOAD_URL = "https://upload.imagekit.io/api/v1/files/upload";
+// Cosmic 3D Prints ImageKit Worker v2026-09-29\nconst IMAGEKIT_UPLOAD_URL = "https://upload.imagekit.io/api/v1/files/upload";
 const IMAGEKIT_API_URL = "https://api.imagekit.io/v1/files";
 
 function corsHeaders(request, env) {
