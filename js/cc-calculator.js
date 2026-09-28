@@ -72,7 +72,7 @@ function accessor(g,a){
 }
 function parseGLTF(g){
   let total=0;
-  function primitive(p,m){const pos=accessor(g,g.accessors[p.attributes.POSITION]).map(x=>tx(x,m));const ind=p.indices==null?pos.map((_,i)=>i):accessor(g,g.accessors[p.indices]);return triVolume(pos,ind,1e-6)}
+  function primitive(p,m){const pos=accessor(g,g.accessors[p.attributes.POSITION]).map(x=>tx(x,m));const ind=p.indices==null?pos.map((_,i)=>i):accessor(g,g.accessors[p.indices]);return triVolume(pos,ind,1e6)}
   function walk(i,parent){const n=g.nodes[i],m=mul(parent,nodeMatrix(n));if(n.mesh!=null)for(const p of g.meshes[n.mesh].primitives||[])total+=primitive(p,m);for(const ch of n.children||[])walk(ch,m)}
   for(const n of (g.scenes?.[g.scene||0]?.nodes||[]))walk(n,identity());
   if(total<=0)throw Error("No measurable GLTF mesh found");return total;
