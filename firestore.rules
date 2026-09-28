@@ -9,7 +9,10 @@ service cloud.firestore {
 
     function isSuperAdmin() {
       return signedIn()
-        && request.auth.token.role == 'super_admin';
+        && (
+          request.auth.token.role == 'super_admin'
+          || currentUser().data.get('role', '') == 'super_admin'
+        );
     }
 
     function currentUser() {
