@@ -25,6 +25,8 @@ function triVolume(pos,indices,unitFactor){
   return Math.abs(v)*unitFactor;
 }
 function parseSTL(buf){
+  if(!(buf instanceof ArrayBuffer))buf=buf?.buffer instanceof ArrayBuffer?buf.buffer:buf;
+  if(!(buf instanceof ArrayBuffer))throw Error("The selected file could not be read as binary data.");
   const d=new DataView(buf),count=d.byteLength>=84?d.getUint32(80,true):0;
   if(count&&84+count*50===d.byteLength){
     const tris=[];let o=84;
@@ -92,8 +94,16 @@ async function parse3MF(buf){
   for(const mesh of [...doc.getElementsByTagName("mesh")]){const vs=[...mesh.getElementsByTagName("vertex")].map(x=>[+x.getAttribute("x"),+x.getAttribute("y"),+x.getAttribute("z")]);for(const t of [...mesh.getElementsByTagName("triangle")])tris.push([vs[+t.getAttribute("v1")],vs[+t.getAttribute("v2")],vs[+t.getAttribute("v3")]])}
   if(!tris.length)throw Error("No 3MF triangles found");return meshVolumeCC(tris);
 }
+function readFileAsArrayBuffer(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=()=>reject(new Error("Could not read the selected file."));
+    reader.readAsArrayBuffer(file);
+  });
+}
 async function calculateModelVolume(file){
-  const buf=await file.arrayBuffer(),ext=file.name.toLowerCase().split(".").pop();
+  const buf=await readFileAsArrayBuffer(file),ext=file.name.toLowerCase().split(".").pop();
   if(ext==="stl")return parseSTL(buf);
   if(ext==="obj")return parseOBJ(new TextDecoder().decode(buf));
   if(ext==="off")return parseOFF(new TextDecoder().decode(buf));
