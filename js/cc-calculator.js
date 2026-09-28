@@ -194,8 +194,22 @@ async function readFileBytes(file){
   if(!bytes.length)throw new Error("The selected file is empty.");
   return bytes;
 }
+async function calculateZipVolume(file){
+  const JSZip=(await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm")).default;
+  const zip=await JSZip.loadAsync(await file.arrayBuffer());
+  const supported=/\\.(stl|obj|3mf|glb|gltf|ply|off|step|stp|iges|igs|fbx|3ds|dae|amf|x3d|wrl)$/i;
+  const entries=Object.values(zip.files).filter(entry=>!entry.dir&&supported.test(entry.name));
+  if(!entries.length)throw Error("ZIP does not contain a supported 3D model file.");
+  const rank=name=>/\\.(step|stp|iges|igs|glb|3mf|stl)$/i.test(name)?0:1;
+  entries.sort((a,b)=>rank(a.name)-rank(b.name));
+  const entry=entries[0];
+  const data=await entry.async("uint8array");
+  const extracted=new File([data],entry.name,{type:"application/octet-stream"});
+  return calculateModelVolume(extracted);
+}
 async function calculateModelVolume(file){
   const bytes=await readFileBytes(file),ext=file.name.toLowerCase().split(".").pop();
+  if(ext==="zip")return calculateZipVolume(file);
   if(ext==="stl")return parseSTL(bytes);
   const text=()=>new TextDecoder().decode(bytes);
   if(ext==="obj")return parseOBJ(text());
