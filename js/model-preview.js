@@ -272,11 +272,17 @@ function gltfParse(loader,bytes,name){
 async function loadParsedData(bytes,name){
   const ext=name.toLowerCase().split(".").pop();
   const {THREE,STLLoader,OBJLoader,ThreeMFLoader,GLTFLoader,PLYLoader,FBXLoader,TDSLoader,ColladaLoader,AMFLoader,VRMLLoader}=await loadThreeAndLoaders();
+  const wrapGeometry=(geometry)=>{
+    if(!geometry||!geometry.isBufferGeometry)throw new Error("The loader returned invalid geometry.");
+    geometry.computeBoundingBox?.();
+    geometry.computeVertexNormals?.();
+    return new THREE.Mesh(geometry,makeMaterial(THREE));
+  };
   if(ext==="zip")return loadZipModel(bytes);
-  if(ext==="stl")return new STLLoader().parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
+  if(ext==="stl")return wrapGeometry(new STLLoader().parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)));
   if(ext==="obj")return new OBJLoader().parse(new TextDecoder().decode(bytes));
   if(ext==="3mf")return new ThreeMFLoader().parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
-  if(ext==="ply")return new PLYLoader().parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
+  if(ext==="ply")return wrapGeometry(new PLYLoader().parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)));
   if(ext==="fbx")return new FBXLoader().parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),"");
   if(ext==="3ds")return new TDSLoader().parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),"");
   if(ext==="dae"){
